@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx shadcn@latest init:*)",
+      "Bash(npm install:*)",
+      "Bash(npx shadcn@latest add:*)",
+      "Bash(npm uninstall:*)",
+      "Bash(dir:*)",
+      "Bash(npx tsc:*)",
+      "Bash(node -e:*)",
+      "Bash(cd \"D:/Himanshu/Himanshu Web Dev/Next/flowchart-ai\" && node --input-type=module << 'EOF'\nimport * as p from './node_modules/@phosphor-icons/react/dist/index.es.js';\nconst keys = Object.keys\\(p\\);\nconsole.log\\('total:', keys.length\\);\nconsole.log\\('sample:', keys.slice\\(0,10\\)\\);\nEOF)",
+      "Bash(tail:*)",
+      "mcp__ide__getDiagnostics",
+      "Bash(cd:*)"
+    ]
+  }
+}

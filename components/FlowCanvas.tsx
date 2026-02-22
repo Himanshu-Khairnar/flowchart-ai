@@ -30,17 +30,18 @@ import {
   ConnectionMode,
   MarkerType,
   NodeResizer,
+  getNodesBounds,
+  getViewportForBounds,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { saveFlowToDb, loadFlowFromDb } from "@/lib/db/flows";
-import { supabase } from "@/lib/supabase";
+import { supabase, getSessionSafe } from "@/lib/supabase";
 import type { FlowData } from "@/types/flow";
 import { ShapeNode } from "./nodes/ShapeNode";
 import { StickyNoteNode } from "./nodes/StickyNoteNode";
 import { DatabaseNode } from "./nodes/DatabaseNode";
 import type { ToolType } from "./FloatingToolbar";
 import { toPng } from "html-to-image";
-import { jsPDF } from "jspdf";
 
 // ─── Process Node ────────────────────────────────────────────────────────────
 function ProcessNode({ data, id, selected, width, height }: { data: any; id: string; selected?: boolean; width?: number; height?: number }) {
@@ -245,7 +246,7 @@ export interface FlowCanvasHandle {
   updateName: (name: string) => void;
   getName: () => string;
   handleExportImage: () => void;
-  handleExportPDF: () => void;
+  handleExportViewport: () => void;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -265,7 +266,7 @@ function FlowContent({ activeTool, onToolUsed, onSaveStatusChange, imperativeRef
   const [edges, setEdges] = useState<Edge[]>(initialEdges);
   const [flowName, setFlowName] = useState<string>("Untitled Flowchart");
   const [currentFlowId, setCurrentFlowId] = useState<string | null>(initialId || null);
-  const { screenToFlowPosition, getNodes, getEdges } = useReactFlow();
+  const { screenToFlowPosition, getNodes, getEdges, getViewport } = useReactFlow();
   const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
   const saveStatusRef = useRef<"saved" | "saving" | "unsaved">("saved");
   // Ref mirrors currentFlowId so auto-save can read it without being in the dep array
@@ -400,7 +401,7 @@ function FlowContent({ activeTool, onToolUsed, onSaveStatusChange, imperativeRef
       }
 
       // Skip DB save when not signed in — data is still in localStorage
-      const { data: { session } } = await supabase.auth.getSession();
+      const { session } = await getSessionSafe();
       if (!session?.user) {
         setSaveStatus("saved"); // localStorage already persists it
         return;
@@ -561,39 +562,106 @@ function FlowContent({ activeTool, onToolUsed, onSaveStatusChange, imperativeRef
     URL.revokeObjectURL(url);
   }, [nodes, edges, flowName]);
 
-  const handleExportImage = useCallback(() => {
-    const element = document.querySelector(".react-flow__viewport") as HTMLElement;
-    if (!element) return;
+  // Compute a viewport transform that fits ALL nodes into a given output size.
+  // Returns null when there are no nodes to export.
+  const getFullFlowCapture = useCallback(
+    (outputWidth: number, outputHeight: number, padding = 40) => {
+      const viewport = document.querySelector(".react-flow__viewport") as HTMLElement;
+      if (!viewport || nodes.length === 0) return null;
 
-    toPng(element, {
-      backgroundColor: "#f8fafc",
+      const bounds = getNodesBounds(nodes);
+      const { x, y, zoom } = getViewportForBounds(
+        bounds,
+        outputWidth,
+        outputHeight,
+        0.1,   // minZoom
+        4,     // maxZoom
+        padding
+      );
+
+      return {
+        viewport,
+        style: {
+          width:  `${outputWidth}px`,
+          height: `${outputHeight}px`,
+          transform: `translate(${x}px, ${y}px) scale(${zoom})`,
+        } as React.CSSProperties,
+        outputWidth,
+        outputHeight,
+      };
+    },
+    [nodes]
+  );
+
+  const handleExportImage = useCallback(() => {
+    // Compute dimensions that preserve the content's aspect ratio at 2× resolution
+    const bounds = nodes.length > 0 ? getNodesBounds(nodes) : null;
+    const aspect = bounds ? bounds.width / bounds.height : 16 / 9;
+
+    const OUTPUT_HEIGHT = 1080;
+    const OUTPUT_WIDTH  = Math.round(OUTPUT_HEIGHT * aspect);
+
+    const capture = getFullFlowCapture(OUTPUT_WIDTH, OUTPUT_HEIGHT);
+    if (!capture) return;
+
+    toPng(capture.viewport, {
+      backgroundColor: "var(--background)",
+      width:  capture.outputWidth,
+      height: capture.outputHeight,
+      style:  capture.style,
+    }).then((dataUrl) => {
+      const link = document.createElement("a");
+      link.download = `${flowName || "flowchart"}.png`;
+      link.href = dataUrl;
+      link.click();
+    }).catch(console.error);
+  }, [flowName, nodes, getFullFlowCapture]);
+
+  const handleExportViewport = useCallback(() => {
+    const viewportEl = document.querySelector(".react-flow__viewport") as HTMLElement;
+    const container  = document.querySelector(".react-flow") as HTMLElement;
+    if (!viewportEl || !container) return;
+
+    const { width, height } = container.getBoundingClientRect();
+    const { x, y, zoom } = getViewport();
+    const w = Math.round(width);
+    const h = Math.round(height);
+
+    // Resolve actual background + foreground colors so SVG text/edges use the correct theme color
+    const docStyle = getComputedStyle(document.documentElement);
+    const bgColor  = getComputedStyle(container).backgroundColor || "#ffffff";
+    const fgColor  = docStyle.getPropertyValue("color") || "#000000";
+
+    toPng(viewportEl, {
+      backgroundColor: bgColor,
+      width:  w,
+      height: h,
       style: {
-        transform: "scale(1)",
-        transformOrigin: "top left",
+        width:     `${w}px`,
+        height:    `${h}px`,
+        transform: `translate(${x}px, ${y}px) scale(${zoom})`,
+        color:     fgColor,
+      },
+      // Inline SVG fill/stroke for edge labels so they don't fall back to SVG default black
+      filter: (node) => {
+        if (node instanceof HTMLElement || node instanceof SVGElement) {
+          const computed = getComputedStyle(node);
+          if (node.tagName === "text" || node.tagName === "tspan") {
+            (node as SVGElement).setAttribute("fill", computed.color || fgColor);
+          }
+        }
+        return true;
       },
     }).then((dataUrl) => {
       const link = document.createElement("a");
       link.download = `${flowName || "flowchart"}.png`;
       link.href = dataUrl;
       link.click();
-    });
-  }, [flowName]);
-
-  const handleExportPDF = useCallback(() => {
-    const element = document.querySelector(".react-flow__viewport") as HTMLElement;
-    if (!element) return;
-
-    toPng(element, {
-      backgroundColor: "#f8fafc",
-    }).then((dataUrl) => {
-      const pdf = new jsPDF("l", "px", [element.offsetWidth, element.offsetHeight]);
-      pdf.addImage(dataUrl, "PNG", 0, 0, element.offsetWidth, element.offsetHeight);
-      pdf.save(`${flowName || "flowchart"}.pdf`);
-    });
-  }, [flowName]);
+    }).catch(console.error);
+  }, [flowName, getViewport]);
 
   const handleManualSave = useCallback(async () => {
-    const { data: { session } } = await supabase.auth.getSession();
+    const { session } = await getSessionSafe();
     if (!session?.user) {
       // Save to localStorage only — data is already auto-saved there, but
       // an explicit manual save also forces a flush and shows "saved" briefly
@@ -660,7 +728,7 @@ function FlowContent({ activeTool, onToolUsed, onSaveStatusChange, imperativeRef
     updateName: (name: string) => setFlowName(name),
     getName: () => flowName,
     handleExportImage,
-    handleExportPDF,
+    handleExportViewport,
   }));
 
   const isDrawingTool = activeTool !== "select" && activeTool !== "pan";

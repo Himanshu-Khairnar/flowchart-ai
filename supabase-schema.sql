@@ -108,9 +108,15 @@ CREATE POLICY "flows_insert"
   WITH CHECK (owner_id = auth.uid());
 
 -- UPDATE: owner or editor-collaborator
+-- WITH CHECK mirrors USING so Supabase doesn't silently reject
+-- collaborator updates due to the implicit owner_id constraint.
 CREATE POLICY "flows_update"
   ON flows FOR UPDATE
   USING (
+    owner_id = auth.uid() OR
+    is_editor_collaborator(id)
+  )
+  WITH CHECK (
     owner_id = auth.uid() OR
     is_editor_collaborator(id)
   );
@@ -169,9 +175,11 @@ FROM flows f
 LEFT JOIN flow_collaborators fc ON fc.flow_id = f.id
 GROUP BY f.id;
 
--- ── 6. User lookup (called by ShareDialog) ───────────────────
--- SECURITY DEFINER so the anon/authenticated role can look up
--- another user's id by their email without direct auth.users access.
+-- ── 6. User lookup helpers (called by ShareDialog) ───────────
+-- Both are SECURITY DEFINER so they can read auth.users without
+-- exposing the table directly to the client role.
+
+-- 6a. Resolve an email → user_id
 CREATE OR REPLACE FUNCTION lookup_user_by_email(p_email TEXT)
 RETURNS TABLE(user_id UUID, user_email TEXT)
 LANGUAGE sql SECURITY DEFINER AS $$
@@ -181,9 +189,30 @@ LANGUAGE sql SECURITY DEFINER AS $$
   LIMIT  1;
 $$;
 
--- Only authenticated users may call this RPC
 REVOKE EXECUTE ON FUNCTION lookup_user_by_email(TEXT) FROM PUBLIC;
 GRANT  EXECUTE ON FUNCTION lookup_user_by_email(TEXT) TO authenticated;
+
+-- 6b. Get collaborators WITH their emails (owner sees all; others see only themselves)
+CREATE OR REPLACE FUNCTION get_flow_collaborators(p_flow_id UUID)
+RETURNS TABLE(user_id UUID, role TEXT, created_at TIMESTAMPTZ, email TEXT)
+LANGUAGE sql SECURITY DEFINER AS $$
+  SELECT fc.user_id,
+         fc.role,
+         fc.created_at,
+         u.email::TEXT
+  FROM   flow_collaborators fc
+  JOIN   auth.users u ON u.id = fc.user_id
+  WHERE  fc.flow_id = p_flow_id
+    AND (
+      -- owner sees everyone; collaborator sees only themselves
+      EXISTS (SELECT 1 FROM flows f WHERE f.id = p_flow_id AND f.owner_id = auth.uid())
+      OR fc.user_id = auth.uid()
+    )
+  ORDER BY fc.created_at ASC;
+$$;
+
+REVOKE EXECUTE ON FUNCTION get_flow_collaborators(UUID) FROM PUBLIC;
+GRANT  EXECUTE ON FUNCTION get_flow_collaborators(UUID) TO authenticated;
 
 -- ── 7. Comments ───────────────────────────────────────────────
 COMMENT ON TABLE  flows                      IS 'One flowchart per row, owned by an authenticated user';
@@ -191,3 +220,45 @@ COMMENT ON COLUMN flows.flow_data            IS 'JSONB with nodes[] and edges[] 
 COMMENT ON COLUMN flows.is_public            IS 'When true, any authenticated user can view (not edit)';
 COMMENT ON TABLE  flow_collaborators         IS 'Users invited to view or edit a specific flow';
 COMMENT ON COLUMN flow_collaborators.role    IS 'viewer = read-only, editor = can modify flow_data';
+
+-- ── 8. AI Sessions ────────────────────────────────────────────
+-- Run this block separately if you already applied sections 1-7.
+
+CREATE TABLE IF NOT EXISTS ai_sessions (
+  id          UUID        DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id     UUID        NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  title       TEXT        NOT NULL DEFAULT 'New Session',
+  messages    JSONB       NOT NULL DEFAULT '[]',
+  summary     TEXT,
+  is_public   BOOLEAN     NOT NULL DEFAULT false,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_ai_sessions_user_id    ON ai_sessions(user_id);
+CREATE INDEX IF NOT EXISTS idx_ai_sessions_updated_at ON ai_sessions(updated_at DESC);
+
+-- Reuse the existing updated_at trigger function
+CREATE OR REPLACE TRIGGER update_ai_sessions_updated_at
+  BEFORE UPDATE ON ai_sessions
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+ALTER TABLE ai_sessions ENABLE ROW LEVEL SECURITY;
+
+-- Owner or public reads
+CREATE POLICY "ai_sessions_select" ON ai_sessions FOR SELECT
+  USING (user_id = auth.uid() OR is_public = true);
+
+CREATE POLICY "ai_sessions_insert" ON ai_sessions FOR INSERT
+  WITH CHECK (user_id = auth.uid());
+
+CREATE POLICY "ai_sessions_update" ON ai_sessions FOR UPDATE
+  USING  (user_id = auth.uid())
+  WITH CHECK (user_id = auth.uid());
+
+CREATE POLICY "ai_sessions_delete" ON ai_sessions FOR DELETE
+  USING (user_id = auth.uid());
+
+COMMENT ON TABLE  ai_sessions          IS 'AI chat sessions with flowchart generation history';
+COMMENT ON COLUMN ai_sessions.messages IS 'JSONB array of {role, content, timestamp} message objects';
+COMMENT ON COLUMN ai_sessions.is_public IS 'When true, anyone can read this session (read-only)';
