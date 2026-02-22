@@ -12,7 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Sparkle } from "@phosphor-icons/react";
+import { Star } from "lucide-react";
 
 interface AuthModalProps {
   onClose: () => void;
@@ -42,7 +42,10 @@ export function AuthModal({ onClose, onSuccess }: AuthModalProps) {
 
     try {
       if (mode === "login") {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        const { error } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
         if (error) throw error;
         onSuccess();
         onClose();
@@ -64,9 +67,16 @@ export function AuthModal({ onClose, onSuccess }: AuthModalProps) {
   };
 
   return (
-    <Dialog open onOpenChange={(open) => { if (!open) onClose(); }}>
-      <DialogContent className="p-0 gap-0 overflow-hidden sm:max-w-sm" showCloseButton={false}>
-
+    <Dialog
+      open
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+    >
+      <DialogContent
+        className="p-0 gap-0 overflow-hidden sm:max-w-sm"
+        showCloseButton={false}
+      >
         {/* Header */}
         <div className="bg-primary px-6 pt-6 pb-5 relative">
           <button
@@ -76,7 +86,10 @@ export function AuthModal({ onClose, onSuccess }: AuthModalProps) {
             ×
           </button>
           <div className="flex items-center gap-2 mb-1">
-            <Sparkle size={20} weight="fill" className="text-primary-foreground/80" />
+            <Star
+              size={20}
+              className="text-primary-foreground/80"
+            />
             <DialogTitle className="text-primary-foreground text-base font-semibold">
               {mode === "login" ? "Welcome back" : "Create account"}
             </DialogTitle>
@@ -108,8 +121,10 @@ export function AuthModal({ onClose, onSuccess }: AuthModalProps) {
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="px-6 pt-5 pb-6 flex flex-col gap-4">
-
+        <form
+          onSubmit={handleSubmit}
+          className="px-6 pt-5 pb-6 flex flex-col gap-4"
+        >
           {/* Info banner */}
           {info && (
             <div className="rounded-md border border-border bg-muted px-3 py-2 text-xs text-muted-foreground">
@@ -127,7 +142,9 @@ export function AuthModal({ onClose, onSuccess }: AuthModalProps) {
           {/* Username — signup only */}
           {mode === "signup" && (
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="auth-username" className="text-xs">Username</Label>
+              <Label htmlFor="auth-username" className="text-xs">
+                Username
+              </Label>
               <Input
                 id="auth-username"
                 type="text"
@@ -142,7 +159,9 @@ export function AuthModal({ onClose, onSuccess }: AuthModalProps) {
 
           {/* Email */}
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="auth-email" className="text-xs">Email</Label>
+            <Label htmlFor="auth-email" className="text-xs">
+              Email
+            </Label>
             <Input
               id="auth-email"
               type="email"
@@ -156,7 +175,9 @@ export function AuthModal({ onClose, onSuccess }: AuthModalProps) {
 
           {/* Password */}
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="auth-password" className="text-xs">Password</Label>
+            <Label htmlFor="auth-password" className="text-xs">
+              Password
+            </Label>
             <Input
               id="auth-password"
               type="password"
@@ -165,18 +186,31 @@ export function AuthModal({ onClose, onSuccess }: AuthModalProps) {
               required
               placeholder="••••••••"
               minLength={6}
-              autoComplete={mode === "login" ? "current-password" : "new-password"}
+              autoComplete={
+                mode === "login" ? "current-password" : "new-password"
+              }
             />
           </div>
 
           {/* Submit */}
-          <Button type="submit" disabled={loading} className="w-full mt-1" size="default">
-            {loading ? "Please wait…" : mode === "login" ? "Log In" : "Create Account"}
+          <Button
+            type="submit"
+            disabled={loading}
+            className="w-full mt-1"
+            size="default"
+          >
+            {loading
+              ? "Please wait…"
+              : mode === "login"
+                ? "Log In"
+                : "Create Account"}
           </Button>
 
           {/* Switch mode */}
           <p className="text-center text-xs text-muted-foreground">
-            {mode === "login" ? "Don't have an account? " : "Already have an account? "}
+            {mode === "login"
+              ? "Don't have an account? "
+              : "Already have an account? "}
             <button
               type="button"
               onClick={() => switchMode(mode === "login" ? "signup" : "login")}
@@ -186,7 +220,6 @@ export function AuthModal({ onClose, onSuccess }: AuthModalProps) {
             </button>
           </p>
         </form>
-
       </DialogContent>
     </Dialog>
   );

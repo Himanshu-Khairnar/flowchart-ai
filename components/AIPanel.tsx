@@ -2,9 +2,9 @@
 
 import { useState, useRef, useEffect } from "react";
 import type { FlowData } from "@/types/flow";
-import { supabase } from "@/lib/supabase";
+import { supabase, getSessionSafe } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
-import { Sparkle, X, ArrowClockwise } from "@phosphor-icons/react";
+import { Sparkles, X, RotateCw } from "lucide-react";
 
 interface AIPanelProps {
   onClose: () => void;
@@ -27,7 +27,12 @@ export function AIPanel({ onClose, onFlowGenerated }: AIPanelProps) {
   const [pos, setPos] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [initialized, setInitialized] = useState(false);
-  const dragRef = useRef<{ startX: number; startY: number; startPosX: number; startPosY: number } | null>(null);
+  const dragRef = useRef<{
+    startX: number;
+    startY: number;
+    startPosX: number;
+    startPosY: number;
+  } | null>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -35,14 +40,19 @@ export function AIPanel({ onClose, onFlowGenerated }: AIPanelProps) {
     if (!initialized) {
       const pw = panelRef.current?.offsetWidth || 460;
       const ph = panelRef.current?.offsetHeight || 420;
-      setPos({ x: (window.innerWidth - pw) / 2, y: (window.innerHeight - ph) / 2 });
+      setPos({
+        x: (window.innerWidth - pw) / 2,
+        y: (window.innerHeight - ph) / 2,
+      });
       setInitialized(true);
       setTimeout(() => textareaRef.current?.focus(), 80);
     }
   }, [initialized]);
 
   useEffect(() => {
-    const handler = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
   }, [onClose]);
@@ -50,7 +60,12 @@ export function AIPanel({ onClose, onFlowGenerated }: AIPanelProps) {
   const onMouseDown = (e: React.MouseEvent) => {
     e.preventDefault();
     setIsDragging(true);
-    dragRef.current = { startX: e.clientX, startY: e.clientY, startPosX: pos.x, startPosY: pos.y };
+    dragRef.current = {
+      startX: e.clientX,
+      startY: e.clientY,
+      startPosX: pos.x,
+      startPosY: pos.y,
+    };
   };
 
   useEffect(() => {
@@ -64,20 +79,28 @@ export function AIPanel({ onClose, onFlowGenerated }: AIPanelProps) {
     const onUp = () => setIsDragging(false);
     window.addEventListener("mousemove", onMove);
     window.addEventListener("mouseup", onUp);
-    return () => { window.removeEventListener("mousemove", onMove); window.removeEventListener("mouseup", onUp); };
+    return () => {
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
+    };
   }, [isDragging]);
 
   const handleGenerate = async () => {
-    if (!prompt.trim()) { setError("Please enter a description"); return; }
+    if (!prompt.trim()) {
+      setError("Please enter a description");
+      return;
+    }
     setIsGenerating(true);
     setError(null);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const { session } = await getSessionSafe();
       const res = await fetch("/api/generate-flowchart", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+          ...(session?.access_token
+            ? { Authorization: `Bearer ${session.access_token}` }
+            : {}),
         },
         body: JSON.stringify({ prompt }),
       });
@@ -122,7 +145,7 @@ export function AIPanel({ onClose, onFlowGenerated }: AIPanelProps) {
         >
           <div className="flex items-center gap-2.5">
             <div className="w-7 h-7 rounded-lg bg-primary-foreground/20 flex items-center justify-center">
-              <Sparkle size={15} weight="fill" className="text-primary-foreground" />
+              <Sparkles size={15} className="text-primary-foreground" />
             </div>
             <div>
               <p className="text-primary-foreground font-semibold text-sm leading-tight">
@@ -134,23 +157,28 @@ export function AIPanel({ onClose, onFlowGenerated }: AIPanelProps) {
             </div>
           </div>
           <button
-            onClick={(e) => { e.stopPropagation(); onClose(); }}
+            onClick={(e) => {
+              e.stopPropagation();
+              onClose();
+            }}
             className="w-7 h-7 rounded-md flex items-center justify-center bg-primary-foreground/15 hover:bg-primary-foreground/30 text-primary-foreground transition-colors"
           >
-            <X size={13} weight="bold" />
+            <X size={13} />
           </button>
         </div>
 
         {/* Body */}
         <div className="p-4 flex flex-col gap-3">
-
           {/* Textarea */}
           <div className="relative">
             <textarea
               ref={textareaRef}
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
-              onKeyDown={(e) => { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) handleGenerate(); }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && (e.ctrlKey || e.metaKey))
+                  handleGenerate();
+              }}
               placeholder="e.g. Create a user registration flow with email verification, database storage, and error handling…"
               rows={4}
               className="w-full px-3 py-2.5 rounded-xl border border-border bg-background text-foreground placeholder:text-muted-foreground text-sm leading-relaxed resize-none outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all font-sans"
@@ -199,17 +227,16 @@ export function AIPanel({ onClose, onFlowGenerated }: AIPanelProps) {
           >
             {isGenerating ? (
               <>
-                <ArrowClockwise size={15} className="animate-spin" />
+                <RotateCw size={15} className="animate-spin" />
                 Generating…
               </>
             ) : (
               <>
-                <Sparkle size={15} weight="fill" />
+                <Sparkles size={15} />
                 Generate Flowchart
               </>
             )}
           </Button>
-
         </div>
       </div>
     </>

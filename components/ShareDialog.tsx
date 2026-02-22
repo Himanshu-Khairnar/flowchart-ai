@@ -25,19 +25,19 @@ import {
   type Collaborator,
   type CollaboratorRole,
 } from "@/lib/db/flows";
-import { supabase } from "@/lib/supabase";
+import { supabase, getSessionSafe } from "@/lib/supabase";
 import {
   UserPlus,
   Copy,
   Check,
-  CaretDown,
-  Trash,
+  ChevronDown,
+  Trash2,
   Crown,
-  PencilSimple,
+  Edit,
   Eye,
-  ArrowClockwise,
+  RotateCw,
   Users,
-} from "@phosphor-icons/react";
+} from "lucide-react";
 
 interface ShareDialogProps {
   open: boolean;
@@ -56,7 +56,12 @@ const ROLE_ICONS: Record<CollaboratorRole, React.ReactNode> = {
   viewer: <Eye size={12} />,
 };
 
-export function ShareDialog({ open, onClose, flowId, flowName }: ShareDialogProps) {
+export function ShareDialog({
+  open,
+  onClose,
+  flowId,
+  flowName,
+}: ShareDialogProps) {
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<CollaboratorRole>("editor");
   const [collaborators, setCollaborators] = useState<Collaborator[]>([]);
@@ -67,7 +72,7 @@ export function ShareDialog({ open, onClose, flowId, flowName }: ShareDialogProp
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    getSessionSafe().then(({ session }) => {
       setCurrentUserId(session?.user?.id ?? null);
     });
   }, []);
@@ -76,7 +81,11 @@ export function ShareDialog({ open, onClose, flowId, flowName }: ShareDialogProp
     if (!flowId) return;
     setIsLoading(true);
     const result = await getCollaborators(flowId);
-    if (result.success && result.data) setCollaborators(result.data);
+    if (result.success) {
+      setCollaborators(result.data ?? []);
+    } else if (result.error) {
+      setError(result.error);
+    }
     setIsLoading(false);
   }, [flowId]);
 
@@ -89,14 +98,30 @@ export function ShareDialog({ open, onClose, flowId, flowName }: ShareDialogProp
   }, [open, loadCollaborators]);
 
   const handleInvite = async () => {
-    if (!email.trim()) { setError("Enter an email address"); return; }
+    const trimmed = email.trim().toLowerCase();
+    if (!trimmed) {
+      setError("Enter an email address");
+      return;
+    }
+
+    // Prevent inviting someone already in the list
+    const alreadyAdded = collaborators.find(
+      (c) => c.email?.toLowerCase() === trimmed,
+    );
+    if (alreadyAdded) {
+      setError(
+        `${trimmed} is already a collaborator (${ROLE_LABELS[alreadyAdded.role]})`,
+      );
+      return;
+    }
+
     setIsInviting(true);
     setError(null);
 
     // Step 1: look up the user by email
-    const lookup = await findUserByEmail(email.trim());
+    const lookup = await findUserByEmail(trimmed);
     if (!lookup.success || !lookup.userId) {
-      setError(lookup.error ?? "User not found");
+      setError(lookup.error ?? "No account found with that email");
       setIsInviting(false);
       return;
     }
@@ -119,10 +144,13 @@ export function ShareDialog({ open, onClose, flowId, flowName }: ShareDialogProp
     setCollaborators((prev) => prev.filter((c) => c.user_id !== userId));
   };
 
-  const handleRoleChange = async (userId: string, newRole: CollaboratorRole) => {
+  const handleRoleChange = async (
+    userId: string,
+    newRole: CollaboratorRole,
+  ) => {
     await updateCollaboratorRole(flowId, userId, newRole);
     setCollaborators((prev) =>
-      prev.map((c) => (c.user_id === userId ? { ...c, role: newRole } : c))
+      prev.map((c) => (c.user_id === userId ? { ...c, role: newRole } : c)),
     );
   };
 
@@ -153,30 +181,45 @@ export function ShareDialog({ open, onClose, flowId, flowName }: ShareDialogProp
         <div className="p-5 flex flex-col gap-5">
           {/* Invite row */}
           <div className="flex flex-col gap-2">
-            <Label className="text-xs font-semibold text-foreground/70">Invite by email</Label>
+            <Label className="text-xs font-semibold text-foreground/70">
+              Invite by email
+            </Label>
             <div className="flex gap-2">
               <Input
                 type="email"
                 placeholder="colleague@example.com"
                 value={email}
-                onChange={(e) => { setEmail(e.target.value); setError(null); }}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  setError(null);
+                }}
                 onKeyDown={(e) => e.key === "Enter" && handleInvite()}
                 className="flex-1 h-9 text-sm"
               />
               {/* Role picker */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" className="gap-1.5 h-9 shrink-0 text-xs px-3">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-1.5 h-9 shrink-0 text-xs px-3"
+                  >
                     {ROLE_ICONS[role]}
                     {ROLE_LABELS[role]}
-                    <CaretDown size={9} className="opacity-50" />
+                    <ChevronDown size={9} className="opacity-50" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-36">
-                  <DropdownMenuItem onClick={() => setRole("editor")} className="gap-2 text-xs cursor-pointer">
+                  <DropdownMenuItem
+                    onClick={() => setRole("editor")}
+                    className="gap-2 text-xs cursor-pointer"
+                  >
                     <PencilSimple size={12} /> Can edit
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setRole("viewer")} className="gap-2 text-xs cursor-pointer">
+                  <DropdownMenuItem
+                    onClick={() => setRole("viewer")}
+                    className="gap-2 text-xs cursor-pointer"
+                  >
                     <Eye size={12} /> Can view
                   </DropdownMenuItem>
                 </DropdownMenuContent>
@@ -188,10 +231,11 @@ export function ShareDialog({ open, onClose, flowId, flowName }: ShareDialogProp
                 disabled={isInviting || !email.trim()}
                 className="gap-1.5 h-9 text-xs shrink-0"
               >
-                {isInviting
-                  ? <ArrowClockwise size={13} className="animate-spin" />
-                  : <UserPlus size={13} weight="bold" />
-                }
+                {isInviting ? (
+                  <ArrowClockwise size={13} className="animate-spin" />
+                ) : (
+                  <UserPlus size={13} />
+                )}
                 Invite
               </Button>
             </div>
@@ -206,11 +250,24 @@ export function ShareDialog({ open, onClose, flowId, flowName }: ShareDialogProp
           {/* Copy link */}
           <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-muted/60 border border-border">
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-semibold text-foreground">Share link</p>
-              <p className="text-[11px] text-muted-foreground truncate">{window.location.href}</p>
+              <p className="text-xs font-semibold text-foreground">
+                Share link
+              </p>
+              <p className="text-[11px] text-muted-foreground truncate">
+                {window.location.href}
+              </p>
             </div>
-            <Button variant="outline" size="sm" onClick={handleCopyLink} className="gap-1.5 h-8 text-xs shrink-0">
-              {copied ? <Check size={13} className="text-emerald-500" /> : <Copy size={13} />}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleCopyLink}
+              className="gap-1.5 h-8 text-xs shrink-0"
+            >
+              {copied ? (
+                <Check size={13} className="text-emerald-500" />
+              ) : (
+                <Copy size={13} />
+              )}
               {copied ? "Copied!" : "Copy"}
             </Button>
           </div>
@@ -221,7 +278,12 @@ export function ShareDialog({ open, onClose, flowId, flowName }: ShareDialogProp
               <p className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest">
                 People with access
               </p>
-              {isLoading && <ArrowClockwise size={11} className="animate-spin text-muted-foreground/50" />}
+              {isLoading && (
+                <ArrowClockwise
+                  size={11}
+                  className="animate-spin text-muted-foreground/50"
+                />
+              )}
             </div>
 
             {collaborators.length === 0 && !isLoading ? (
@@ -257,7 +319,7 @@ export function ShareDialog({ open, onClose, flowId, flowName }: ShareDialogProp
                         >
                           {ROLE_ICONS[c.role]}
                           {ROLE_LABELS[c.role]}
-                          <CaretDown size={8} className="opacity-50" />
+                          <ChevronDown size={8} className="opacity-50" />
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" className="w-36">
@@ -282,7 +344,7 @@ export function ShareDialog({ open, onClose, flowId, flowName }: ShareDialogProp
                       className="opacity-0 group-hover:opacity-100 w-6 h-6 flex items-center justify-center rounded hover:bg-destructive/10 hover:text-destructive text-muted-foreground transition-all shrink-0"
                       title="Remove"
                     >
-                      <Trash size={12} weight="bold" />
+                      <Trash2 size={12} />
                     </button>
                   </div>
                 ))}
@@ -293,7 +355,9 @@ export function ShareDialog({ open, onClose, flowId, flowName }: ShareDialogProp
           {/* Owner note */}
           <div className="flex items-center gap-2 text-[11px] text-muted-foreground/60">
             <Crown size={11} />
-            <span>You are the owner — collaborators see this flow in their sidebar</span>
+            <span>
+              You are the owner — collaborators see this flow in their sidebar
+            </span>
           </div>
         </div>
       </DialogContent>
