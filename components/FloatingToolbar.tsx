@@ -202,7 +202,6 @@ const toolGroups: { label: string; tools: ToolButton[] }[] = [
   },
 ];
 
-// Keyboard shortcut → tool mapping
 const KEY_SHORTCUTS: Record<string, ToolType> = {
   v: "select",
   h: "pan",
@@ -250,7 +249,6 @@ export function FloatingToolbar({
   const [tooltip, setTooltip] = useState<string | null>(null);
   const { open: sidebarOpen } = useSidebar();
 
-  // Keyboard shortcuts for tools
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       // Don't fire when typing in inputs / textareas
@@ -269,13 +267,11 @@ export function FloatingToolbar({
     return () => window.removeEventListener("keydown", handler);
   }, [onToolChange]);
 
-  // Effective save status label — show "Local" when not signed in and status is "saved"
   const effectiveSaveStatus =
     saveStatus === "saved" && !user ? "saved-local" : saveStatus;
 
   return (
     <>
-      {/* ── Bottom toolbar ───────────────────────────────────────── */}
       <div className="fixed bottom-5 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-0.5 bg-popover border border-border rounded-2xl shadow-xl px-1.5 py-1 max-w-[95vw] overflow-x-auto">
         {toolGroups.map((group, gi) => (
           <div key={group.label} className="flex items-center gap-0.5">
@@ -305,7 +301,6 @@ export function FloatingToolbar({
           </div>
         ))}
 
-        {/* Divider + AI button */}
         <div className="w-px h-5 bg-border/70 mx-1" />
         <button
           onClick={onAIClick}
@@ -329,12 +324,10 @@ export function FloatingToolbar({
         </button>
       </div>
 
-      {/* ── Top HUD ──────────────────────────────────────────────── */}
       <div
         className="fixed top-0 right-0 z-[90] h-14 flex items-center justify-between px-4 md:px-3 bg-background/95 backdrop-blur-sm border-b border-border transition-[left] duration-200 ease-linear"
         style={{ left: sidebarOpen ? "var(--sidebar-width, 16rem)" : "0px" }}
       >
-        {/* Left: sidebar toggle + name + save status */}
         <div className="flex items-center gap-2 flex-1 min-w-0">
           <SidebarTrigger className="shrink-0 text-muted-foreground hover:text-foreground" />
           <input
@@ -358,7 +351,6 @@ export function FloatingToolbar({
           </div>
         </div>
 
-        {/* Right: actions + user */}
         <div className="flex items-center gap-1.5">
           {/* Save */}
           <Button
@@ -371,7 +363,6 @@ export function FloatingToolbar({
             <span className="hidden sm:inline">Save</span>
           </Button>
 
-          {/* Export */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
@@ -400,7 +391,6 @@ export function FloatingToolbar({
             </DropdownMenuContent>
           </DropdownMenu>
 
-          {/* Public / Private toggle — only when flow is saved and user owns it */}
           {flowId && user && onTogglePublic && (
             <Button
               variant="outline"
@@ -425,7 +415,6 @@ export function FloatingToolbar({
             </Button>
           )}
 
-          {/* New / Clear */}
           <Button
             variant="outline"
             size="sm"
@@ -438,7 +427,6 @@ export function FloatingToolbar({
         </div>
       </div>
 
-      {/* ── Tooltip ───────────────────────────────────────────────── */}
       {tooltip && (
         <div className="fixed bottom-16 left-1/2 -translate-x-1/2 z-[200] bg-popover border border-border text-foreground text-xs font-medium px-2.5 py-1 rounded-lg shadow-md pointer-events-none whitespace-nowrap">
           {tooltip}

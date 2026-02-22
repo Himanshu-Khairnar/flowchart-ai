@@ -44,13 +44,12 @@ import {
   ArrowLeft,
   Send,
   Globe,
+  MessageCircle as ChatTeardrop,
 } from "lucide-react";
 import type { FlowData } from "@/types/flow";
 
-// ── Types ─────────────────────────────────────────────────────
 type SidebarTab = "recent" | "ai";
 
-// ── LocalStorage fallback (when not signed in) ───────────────
 const LS_KEY = "flowai-ai-sessions";
 
 interface LSSession {
@@ -75,7 +74,6 @@ function lsSave(s: LSSession[]) {
   } catch {}
 }
 
-// ── Utils ─────────────────────────────────────────────────────
 function getRelativeTime(dateString: string) {
   try {
     const diff = Math.floor(
@@ -97,7 +95,6 @@ const EXAMPLE_PROMPTS = [
   "Password reset",
 ];
 
-// ── Unified session shape used in component ───────────────────
 interface SessionView {
   id: string;
   title: string;
@@ -118,7 +115,6 @@ function toView(s: AISession): SessionView {
   };
 }
 
-// ── Props ─────────────────────────────────────────────────────
 interface AppSidebarProps {
   onLoadFlow: (flowId: string) => void;
   onNewFlow: () => void;
@@ -132,7 +128,6 @@ interface AppSidebarProps {
   onActiveTabChange?: (tab: SidebarTab) => void;
 }
 
-// ── Component ─────────────────────────────────────────────────
 export function AppSidebar({
   onLoadFlow,
   onNewFlow,
@@ -145,16 +140,13 @@ export function AppSidebar({
   activeTab: externalTab,
   onActiveTabChange,
 }: AppSidebarProps) {
-  // Recent-tab state
   const [flows, setFlows] = useState<any[]>([]);
   const [loadingFlows, setLoadingFlows] = useState(false);
 
-  // Tab state
   const [activeTab, setActiveTab] = useState<SidebarTab>(
     externalTab ?? "recent",
   );
 
-  // AI state
   const [sessions, setSessions] = useState<SessionView[]>([]);
   const [loadingSessions, setLoadingSessions] = useState(false);
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
@@ -167,12 +159,10 @@ export function AppSidebar({
 
   const useSupabase = !!user && isSupabaseConfigured();
 
-  // ── Sync external tab ──
   useEffect(() => {
     if (externalTab && externalTab !== activeTab) setActiveTab(externalTab);
   }, [externalTab]);
 
-  // ── Load sessions (Supabase or localStorage) ──
   const fetchSessions = async () => {
     if (useSupabase) {
       setLoadingSessions(true);
@@ -187,12 +177,10 @@ export function AppSidebar({
     fetchSessions();
   }, [user]);
 
-  // ── Scroll messages to bottom ──
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [sessions, activeSessionId, isGenerating]);
 
-  // ── Load flows ──
   const fetchFlows = async () => {
     if (!user) return;
     setLoadingFlows(true);
@@ -204,7 +192,6 @@ export function AppSidebar({
     fetchFlows();
   }, [user, currentFlowId]);
 
-  // ── Delete flow ──
   const handleDeleteFlow = async (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
     if (!confirm("Delete this flowchart?")) return;
@@ -215,17 +202,14 @@ export function AppSidebar({
     }
   };
 
-  // ── Tab change ──
   const handleTabChange = (tab: SidebarTab) => {
     setActiveTab(tab);
     onActiveTabChange?.(tab);
     if (tab === "ai") setTimeout(() => textareaRef.current?.focus(), 80);
   };
 
-  // ── Active session derived ──
   const activeSession = sessions.find((s) => s.id === activeSessionId) ?? null;
 
-  // ── Session helpers ──
   const handleNewSession = () => {
     setActiveSessionId(null);
     setPrompt("");
@@ -250,8 +234,7 @@ export function AppSidebar({
     if (activeSessionId === id) setActiveSessionId(null);
   };
 
-  // ── Generate flowchart ──
-  const handleGenerate = async () => {
+   const handleGenerate = async () => {
     if (!prompt.trim()) {
       setAiError("Please enter a description");
       return;
@@ -261,16 +244,13 @@ export function AppSidebar({
       return;
     }
 
-    // Limit: 3 sessions per user
-    if (!activeSessionId && sessions.length >= 3) {
+     if (!activeSessionId && sessions.length >= 3) {
       setAiError(
         "You've reached the 3-session limit. Delete an old session to start a new one.",
       );
       return;
     }
-
-    // Limit: 10 messages per session (user messages only)
-    if (activeSession) {
+     if (activeSession) {
       const userMsgCount = activeSession.messages.filter(
         (m) => m.role === "user",
       ).length;
@@ -291,15 +271,13 @@ export function AppSidebar({
       timestamp: new Date().toISOString(),
     };
 
-    // Build context from current session (last 8 messages before this one)
-    const contextMessages = activeSession
+     const contextMessages = activeSession
       ? activeSession.messages
           .slice(-8)
           .map((m) => ({ role: m.role, content: m.content }))
       : [];
 
-    // Optimistically create/update session in state
-    let sessionId = activeSessionId;
+     let sessionId = activeSessionId;
     let updatedSessions = [...sessions];
 
     if (!sessionId) {
@@ -357,14 +335,12 @@ export function AppSidebar({
       };
       const summary = `${flowTitle} · ${nodeCount} nodes`;
 
-      // Persist to Supabase or localStorage
-      if (useSupabase) {
+       if (useSupabase) {
         const currentSession = updatedSessions.find((s) => s.id === sessionId);
         const allMessages = [...(currentSession?.messages ?? []), assistantMsg];
 
         if (sessionId?.startsWith("temp-")) {
-          // Create in Supabase and get real ID
-          const realId = await createAISession(
+           const realId = await createAISession(
             updatedSessions.find((s) => s.id === sessionId)?.title ?? flowTitle,
             allMessages,
           );
@@ -390,8 +366,7 @@ export function AppSidebar({
           setSessions(updatedSessions);
         }
       } else {
-        // localStorage
-        updatedSessions = updatedSessions.map((s) =>
+         updatedSessions = updatedSessions.map((s) =>
           s.id === sessionId
             ? { ...s, messages: [...s.messages, assistantMsg], summary }
             : s,
@@ -406,14 +381,11 @@ export function AppSidebar({
     }
   };
 
-  // ── Derived ──
-  const isAIContentOverflowHidden = activeTab === "ai" && !!activeSession;
+   const isAIContentOverflowHidden = activeTab === "ai" && !!activeSession;
 
-  // ── Render ────────────────────────────────────────────────────
-  return (
+   return (
     <Sidebar collapsible="offcanvas">
-      {/* ── Header ── */}
-      <SidebarHeader className="h-14 flex-row items-center gap-2.5 border-b border-sidebar-border/60 px-4">
+       <SidebarHeader className="h-14 flex-row items-center gap-2.5 border-b border-sidebar-border/60 px-4">
         <div className="w-7 h-7 rounded-lg bg-sidebar-primary flex items-center justify-center shrink-0">
           <GitBranch size={14} className="text-sidebar-primary-foreground" />
         </div>
@@ -430,9 +402,7 @@ export function AppSidebar({
           <Plus size={16} />
         </Button>
       </SidebarHeader>
-
-      {/* ── Tabs ── */}
-      <div className="flex border-b border-sidebar-border/60 shrink-0">
+       <div className="flex border-b border-sidebar-border/60 shrink-0">
         <button
           onClick={() => handleTabChange("recent")}
           className={[
@@ -458,14 +428,11 @@ export function AppSidebar({
         </button>
       </div>
 
-      {/* ── Content ── */}
-      <SidebarContent
+       <SidebarContent
         className={isAIContentOverflowHidden ? "overflow-hidden" : ""}
       >
-        {/* ══ RECENT TAB ══ */}
-        {activeTab === "recent" && (
+         {activeTab === "recent" && (
           <SidebarGroup>
-             
             <SidebarGroupLabel className="text-[10px] font-bold text-sidebar-foreground/40 uppercase tracking-widest">
               My Charts
             </SidebarGroupLabel>
@@ -517,7 +484,6 @@ export function AppSidebar({
                               <p className="text-[13px] font-medium truncate leading-tight flex-1">
                                 {displayName}
                               </p>
-                              
                             </div>
                             <div className="flex items-center gap-1 mt-0.5 text-[10px] opacity-50">
                               <Clock size={10} />
@@ -530,7 +496,6 @@ export function AppSidebar({
                           </div>
                         </SidebarMenuButton>
 
-                        {/* Delete */}
                         <SidebarMenuAction
                           onClick={(e) => handleDeleteFlow(e, flow.id)}
                           title="Delete"
@@ -547,10 +512,8 @@ export function AppSidebar({
           </SidebarGroup>
         )}
 
-        {/* ══ AI TAB ══ */}
         {activeTab === "ai" && (
           <>
-            {/* Not signed in */}
             {!user ? (
               <div className="flex flex-col items-center justify-center gap-3 py-12 px-5 text-center">
                 <div className="w-11 h-11 rounded-xl bg-sidebar-primary/10 flex items-center justify-center">
@@ -567,10 +530,9 @@ export function AppSidebar({
                   Sign in to use AI
                 </Button>
               </div>
-            ) : /* Active session: chat view */
+            ) : 
             activeSession ? (
               <div className="flex flex-col h-full min-h-0">
-                {/* Session header */}
                 <div className="flex items-center gap-2 px-3 py-2 border-b border-sidebar-border/40 shrink-0">
                   <button
                     onClick={handleNewSession}
@@ -584,7 +546,6 @@ export function AppSidebar({
                   </p>
                 </div>
 
-                {/* Context summary banner — shown when session has prior history */}
                 {activeSession.messages.length > 2 && (
                   <div className="mx-3 mt-2 px-2.5 py-1.5 rounded-lg bg-sidebar-primary/8 border border-sidebar-primary/15 text-[10px] text-sidebar-foreground/60 flex items-center gap-1.5 shrink-0">
                     <Sparkles
@@ -599,7 +560,6 @@ export function AppSidebar({
                   </div>
                 )}
 
-                {/* Messages */}
                 <div className="flex-1 overflow-y-auto px-3 py-3 flex flex-col gap-2.5 no-scrollbar">
                   {activeSession.messages.map((msg, i) => (
                     <div
@@ -641,7 +601,6 @@ export function AppSidebar({
                   <div ref={messagesEndRef} />
                 </div>
 
-                {/* Input */}
                 <div className="px-3 pb-3 pt-2 border-t border-sidebar-border/40 shrink-0">
                   {aiError && (
                     <div className="mb-2 px-2.5 py-1.5 rounded-lg border border-destructive/30 bg-destructive/10 text-destructive text-[11px]">
@@ -697,9 +656,7 @@ export function AppSidebar({
                 </div>
               </div>
             ) : (
-              /* Session list + new chat */
               <div className="flex flex-col">
-                {/* New chat input */}
                 <div className="px-3 pt-3 pb-2 flex flex-col gap-2">
                   {aiError && (
                     <div className="px-2.5 py-1.5 rounded-lg border border-destructive/30 bg-destructive/10 text-destructive text-[11px]">
@@ -774,7 +731,6 @@ export function AppSidebar({
 
                 <SidebarSeparator />
 
-                {/* Past sessions */}
                 {loadingSessions ? (
                   <div className="py-6 text-center text-xs text-sidebar-foreground/30 animate-pulse">
                     Loading sessions…
@@ -818,7 +774,6 @@ export function AppSidebar({
                               </div>
                             </SidebarMenuButton>
 
-                            {/* Delete */}
                             <SidebarMenuAction
                               onClick={(e) =>
                                 handleDeleteSession(e, session.id)
@@ -848,7 +803,6 @@ export function AppSidebar({
         )}
       </SidebarContent>
 
-      {/* ── Footer ── */}
       <SidebarFooter className="border-t border-sidebar-border/60 p-3">
         {user ? (
           <div className="flex items-center gap-2 px-1">

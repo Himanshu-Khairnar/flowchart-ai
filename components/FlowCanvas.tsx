@@ -43,9 +43,7 @@ import { DatabaseNode } from "./nodes/DatabaseNode";
 import type { ToolType } from "./FloatingToolbar";
 import { toPng } from "html-to-image";
 
-// ─── Process Node ────────────────────────────────────────────────────────────
 function ProcessNode({ data, id, selected, width, height }: { data: any; id: string; selected?: boolean; width?: number; height?: number }) {
-  // Use explicit size only when NodeResizer has set one (> 0); else fall back to natural CSS
   const w = width  || 160;
   const h = height || 50;
 
@@ -88,7 +86,6 @@ function ProcessNode({ data, id, selected, width, height }: { data: any; id: str
   );
 }
 
-// ─── Decision Node ────────────────────────────────────────────────────────────
 function DecisionNode({ data, id, selected, width, height }: { data: any; id: string; selected?: boolean; width?: number; height?: number }) {
   const w = width  || 130;
   const h = height || 130;
@@ -135,7 +132,6 @@ function DecisionNode({ data, id, selected, width, height }: { data: any; id: st
   );
 }
 
-// ─── Terminal Node (Start / End) ──────────────────────────────────────────────
 function TerminalNode({ data, id, selected, width, height }: { data: any; id: string; selected?: boolean; width?: number; height?: number }) {
   const isStart = data.terminalType !== "end";
   const color   = isStart ? "var(--chart-2)" : "var(--destructive)";
@@ -183,7 +179,6 @@ function TerminalNode({ data, id, selected, width, height }: { data: any; id: st
   );
 }
 
-// ─── Override built-in input/output with TerminalNode ────────────────────────
 function InputNode({ data, id, selected, width, height }: { data: any; id: string; selected?: boolean; width?: number; height?: number }) {
   return <TerminalNode data={{ ...data, terminalType: "start" }} id={id} selected={selected} width={width} height={height} />;
 }
@@ -191,11 +186,9 @@ function OutputNode({ data, id, selected, width, height }: { data: any; id: stri
   return <TerminalNode data={{ ...data, terminalType: "end" }} id={id} selected={selected} width={width} height={height} />;
 }
 
-// ─── Initial state ────────────────────────────────────────────────────────────
 const initialNodes: Node[] = [];
 const initialEdges: Edge[] = [];
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
 function toolToNodeConfig(tool: ToolType): { type: string; data: Record<string, any> } | null {
   switch (tool) {
     case "process":
@@ -228,7 +221,6 @@ function toolToNodeConfig(tool: ToolType): { type: string; data: Record<string, 
   }
 }
 
-// ─── FlowContent ──────────────────────────────────────────────────────────────
 interface FlowContentProps {
   activeTool: ToolType;
   onToolUsed: () => void;
@@ -249,7 +241,6 @@ export interface FlowCanvasHandle {
   handleExportViewport: () => void;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const nodeTypes: Record<string, React.ComponentType<any>> = {
   process: ProcessNode,
   decision: DecisionNode,
@@ -287,7 +278,6 @@ function FlowContent({ activeTool, onToolUsed, onSaveStatusChange, imperativeRef
     [onSaveStatusChange]
   );
 
-  // Node label change handler
   const handleNodeChange = useCallback((nodeId: string, newLabel: string) => {
     setNodes((nds) =>
       nds.map((n) =>
@@ -296,7 +286,6 @@ function FlowContent({ activeTool, onToolUsed, onSaveStatusChange, imperativeRef
     );
   }, []);
 
-  // Generic full-data change handler (used by DatabaseNode for column edits)
   const handleNodeDataChange = useCallback((nodeId: string, newData: Record<string, unknown>) => {
     setNodes((nds) =>
       nds.map((n) =>
@@ -311,13 +300,11 @@ function FlowContent({ activeTool, onToolUsed, onSaveStatusChange, imperativeRef
       data: { ...n.data, onChange: handleNodeChange, onDataChange: handleNodeDataChange },
     })), [handleNodeChange, handleNodeDataChange]);
 
-  // Handle ID changes, loading data, and state resets
   useEffect(() => {
     const loadData = async () => {
       isLoadingRef.current = true;
 
       if (initialId) {
-        // Load specific flow from DB
         setCurrentFlowId(initialId);
         currentFlowIdRef.current = initialId;
         const result = await loadFlowFromDb(initialId);
@@ -326,7 +313,6 @@ function FlowContent({ activeTool, onToolUsed, onSaveStatusChange, imperativeRef
           setEdges(result.data.edges);
           if (result.data.name) setFlowName(result.data.name);
         } else {
-          // Flow not found (deleted or stale ID) — reset to blank
           localStorage.removeItem("flowchart-id");
           localStorage.removeItem("flowchart-data");
           currentFlowIdRef.current = null;
@@ -336,16 +322,13 @@ function FlowContent({ activeTool, onToolUsed, onSaveStatusChange, imperativeRef
           setFlowName("Untitled Flowchart");
         }
       } else {
-        // We are at root (New Flow)
         setCurrentFlowId(null);
         currentFlowIdRef.current = null;
 
-        // Try to recover last unsaved session from localStorage
         const savedFlow = localStorage.getItem("flowchart-data");
         const savedFlowId = localStorage.getItem("flowchart-id");
 
         if (savedFlowId && !initialId) {
-          // Root means a new blank flow — stay clean
           setNodes([]);
           setEdges([]);
           setFlowName("Untitled Flowchart");
@@ -367,7 +350,6 @@ function FlowContent({ activeTool, onToolUsed, onSaveStatusChange, imperativeRef
         }
       }
 
-      // Give React a tick to flush state updates before re-enabling auto-save
       setTimeout(() => {
         isLoadingRef.current = false;
       }, 200);
@@ -376,34 +358,28 @@ function FlowContent({ activeTool, onToolUsed, onSaveStatusChange, imperativeRef
     loadData();
   }, [initialId, attachCallbacks]);
 
-  // Persist to localStorage
   useEffect(() => {
     localStorage.setItem("flowchart-data", JSON.stringify({ nodes, edges, name: flowName }));
   }, [nodes, edges, flowName]);
 
-  // Auto-save to DB
   useEffect(() => {
     if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
 
-    // Skip auto-save while the initial data is being loaded to avoid false "unsaved" status
     if (isLoadingRef.current) return;
 
-    // Only mark as unsaved if there is actual content to save
     if (nodes.length > 0 || edges.length > 0) {
       setSaveStatus("unsaved");
     }
 
     autoSaveTimerRef.current = setTimeout(async () => {
-      // Don't auto-create empty flows in DB
       if (nodes.length === 0 && edges.length === 0) {
         setSaveStatus("saved");
         return;
       }
 
-      // Skip DB save when not signed in — data is still in localStorage
       const { session } = await getSessionSafe();
       if (!session?.user) {
-        setSaveStatus("saved"); // localStorage already persists it
+        setSaveStatus("saved"); 
         return;
       }
 
@@ -415,7 +391,6 @@ function FlowContent({ activeTool, onToolUsed, onSaveStatusChange, imperativeRef
         updatedAt: new Date().toISOString(),
       };
 
-      // Use ref so changing currentFlowId doesn't re-trigger this effect
       const result = await saveFlowToDb(flowData, currentFlowIdRef.current || undefined);
 
       if (result.success && result.id) {
@@ -435,12 +410,8 @@ function FlowContent({ activeTool, onToolUsed, onSaveStatusChange, imperativeRef
     return () => {
       if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
     };
-    // currentFlowId and onFlowIdCreated intentionally excluded — read via refs
-    // to prevent the timer from being cancelled on every parent re-render
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [nodes, edges, setSaveStatus, flowName]);
 
-  // Keep onChange callbacks updated
   useEffect(() => {
     setNodes((nds) =>
       nds.map((n) => ({
@@ -503,7 +474,7 @@ function FlowContent({ activeTool, onToolUsed, onSaveStatusChange, imperativeRef
 
   const onConnect = useCallback(
     (connection: Connection) => {
-      const newEdge = { ...connection, markerEnd: { type: MarkerType.ArrowClosed }, style: { strokeWidth: 1.5 }, id: `edge-${Date.now()}` };
+      const newEdge: Edge = { ...connection, markerEnd: { type: MarkerType.ArrowClosed }, style: { strokeWidth: 1.5 }, id: `edge-${Date.now()}` } as Edge;
       setEdges((eds) => addEdge(newEdge, eds));
       channelRef.current?.send({
         type: "broadcast",
@@ -539,7 +510,6 @@ function FlowContent({ activeTool, onToolUsed, onSaveStatusChange, imperativeRef
     [activeTool, screenToFlowPosition, handleNodeChange, handleNodeDataChange, onToolUsed]
   );
 
-  // Esc cancels active tool
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.key === "Escape" && activeTool !== "select") {
@@ -561,9 +531,7 @@ function FlowContent({ activeTool, onToolUsed, onSaveStatusChange, imperativeRef
     a.click();
     URL.revokeObjectURL(url);
   }, [nodes, edges, flowName]);
-
-  // Compute a viewport transform that fits ALL nodes into a given output size.
-  // Returns null when there are no nodes to export.
+ 
   const getFullFlowCapture = useCallback(
     (outputWidth: number, outputHeight: number, padding = 40) => {
       const viewport = document.querySelector(".react-flow__viewport") as HTMLElement;
@@ -574,8 +542,8 @@ function FlowContent({ activeTool, onToolUsed, onSaveStatusChange, imperativeRef
         bounds,
         outputWidth,
         outputHeight,
-        0.1,   // minZoom
-        4,     // maxZoom
+        0.1,    
+        5,      
         padding
       );
 
@@ -594,7 +562,6 @@ function FlowContent({ activeTool, onToolUsed, onSaveStatusChange, imperativeRef
   );
 
   const handleExportImage = useCallback(() => {
-    // Compute dimensions that preserve the content's aspect ratio at 2× resolution
     const bounds = nodes.length > 0 ? getNodesBounds(nodes) : null;
     const aspect = bounds ? bounds.width / bounds.height : 16 / 9;
 
@@ -627,7 +594,6 @@ function FlowContent({ activeTool, onToolUsed, onSaveStatusChange, imperativeRef
     const w = Math.round(width);
     const h = Math.round(height);
 
-    // Resolve actual background + foreground colors so SVG text/edges use the correct theme color
     const docStyle = getComputedStyle(document.documentElement);
     const bgColor  = getComputedStyle(container).backgroundColor || "#ffffff";
     const fgColor  = docStyle.getPropertyValue("color") || "#000000";
@@ -642,7 +608,6 @@ function FlowContent({ activeTool, onToolUsed, onSaveStatusChange, imperativeRef
         transform: `translate(${x}px, ${y}px) scale(${zoom})`,
         color:     fgColor,
       },
-      // Inline SVG fill/stroke for edge labels so they don't fall back to SVG default black
       filter: (node) => {
         if (node instanceof HTMLElement || node instanceof SVGElement) {
           const computed = getComputedStyle(node);
@@ -662,9 +627,7 @@ function FlowContent({ activeTool, onToolUsed, onSaveStatusChange, imperativeRef
 
   const handleManualSave = useCallback(async () => {
     const { session } = await getSessionSafe();
-    if (!session?.user) {
-      // Save to localStorage only — data is already auto-saved there, but
-      // an explicit manual save also forces a flush and shows "saved" briefly
+    if (!session?.user) { 
       localStorage.setItem(
         "flowchart-data",
         JSON.stringify({ nodes, edges, name: flowName })
@@ -713,13 +676,10 @@ function FlowContent({ activeTool, onToolUsed, onSaveStatusChange, imperativeRef
       setNodes(nodesWithHandlers);
       setEdges(aiData.edges);
       if (aiData.name) setFlowName(aiData.name);
-      // Mark unsaved so auto-save picks it up (AI-generated content should be saved)
       setSaveStatus("unsaved");
     },
     [handleNodeChange, handleNodeDataChange, setSaveStatus]
   );
-
-  // Expose methods via imperative handle
   useImperativeHandle(imperativeRef, () => ({
     handleExport,
     handleManualSave,
@@ -795,8 +755,6 @@ function FlowContent({ activeTool, onToolUsed, onSaveStatusChange, imperativeRef
     </div>
   );
 }
-
-// ─── Public component with forwardRef ─────────────────────────────────────────
 interface FlowCanvasProps {
   activeTool: ToolType;
   onToolUsed: () => void;

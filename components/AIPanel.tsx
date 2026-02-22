@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import type { FlowData } from "@/types/flow";
-import { supabase, getSessionSafe } from "@/lib/supabase";
+import {  getSessionSafe } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Sparkles, X, RotateCw } from "lucide-react";
 
@@ -117,13 +117,11 @@ export function AIPanel({ onClose, onFlowGenerated }: AIPanelProps) {
 
   return (
     <>
-      {/* Backdrop */}
       <div
         className="fixed inset-0 z-[199] bg-black/20 backdrop-blur-[2px]"
         onClick={onClose}
       />
 
-      {/* Panel */}
       <div
         ref={panelRef}
         style={{
@@ -137,7 +135,6 @@ export function AIPanel({ onClose, onFlowGenerated }: AIPanelProps) {
         }}
         className="bg-card border border-border rounded-2xl shadow-2xl overflow-hidden"
       >
-        {/* Drag handle / Header */}
         <div
           onMouseDown={onMouseDown}
           style={{ cursor: isDragging ? "grabbing" : "grab" }}
@@ -167,9 +164,7 @@ export function AIPanel({ onClose, onFlowGenerated }: AIPanelProps) {
           </button>
         </div>
 
-        {/* Body */}
         <div className="p-4 flex flex-col gap-3">
-          {/* Textarea */}
           <div className="relative">
             <textarea
               ref={textareaRef}
@@ -188,7 +183,6 @@ export function AIPanel({ onClose, onFlowGenerated }: AIPanelProps) {
             </span>
           </div>
 
-          {/* Example chips */}
           <div>
             <p className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest mb-2">
               Quick examples
@@ -211,14 +205,12 @@ export function AIPanel({ onClose, onFlowGenerated }: AIPanelProps) {
             </div>
           </div>
 
-          {/* Error */}
           {error && (
             <div className="px-3 py-2 rounded-lg border border-destructive/30 bg-destructive/10 text-destructive text-xs">
               {error}
             </div>
           )}
 
-          {/* Generate button */}
           <Button
             onClick={handleGenerate}
             disabled={isGenerating || !prompt.trim()}

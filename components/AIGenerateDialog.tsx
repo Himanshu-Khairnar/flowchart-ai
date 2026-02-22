@@ -46,11 +46,8 @@ export function AIGenerateDialog({ onFlowGenerated }: AIGenerateDialogProps) {
       if (!response.ok) {
         throw new Error(data.error || "Failed to generate flowchart");
       }
-
-      // Pass the generated flow data to parent
       onFlowGenerated(data.flowData);
 
-      // Close dialog and reset
       setOpen(false);
       setPrompt("");
       setError(null);
@@ -98,7 +95,6 @@ export function AIGenerateDialog({ onFlowGenerated }: AIGenerateDialogProps) {
             />
           </div>
 
-          {/* Example Prompts */}
           <div className="space-y-2">
             <label className="text-sm font-medium text-muted-foreground">
               Example prompts:
@@ -118,14 +114,12 @@ export function AIGenerateDialog({ onFlowGenerated }: AIGenerateDialogProps) {
             </div>
           </div>
 
-          {/* Error Message */}
           {error && (
             <div className="bg-destructive/10 text-destructive text-sm p-3 rounded-md">
               {error}
             </div>
           )}
 
-          {/* Generate Button */}
           <Button
             onClick={handleGenerate}
             disabled={isGenerating || !prompt.trim()}

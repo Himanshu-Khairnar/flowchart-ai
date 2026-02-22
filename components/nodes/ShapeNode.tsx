@@ -8,10 +8,7 @@ type ShapeType =
   | "parallelogram" | "hexagon" | "triangle" | "cylinder"
   | "star" | "cloud" | "document" | "pentagon"
   | "arrow-right" | "arrow-left" | "arrow-up" | "arrow-down" | "arrow-left-right";
-
-// ── Color tokens → CSS variables ─────────────────────────────────────────────
-// Gemini outputs a token name; we resolve it here so shapes adapt to the theme
-// (light / dark mode) automatically. Hex fallback for backward compatibility.
+ 
 const COLOR_TOKENS: Record<string, string> = {
   primary:     "var(--primary)",
   destructive: "var(--destructive)",
@@ -25,7 +22,6 @@ const COLOR_TOKENS: Record<string, string> = {
   amber:   "var(--chart-1)",
   red:     "var(--destructive)",
   brown:   "var(--chart-5)",
-  // Non-theme colors (these are not in the shadcn palette but kept for diversity)
   blue:    "#3b82f6",
   green:   "#22c55e",
   purple:  "#8b5cf6",
@@ -33,7 +29,6 @@ const COLOR_TOKENS: Record<string, string> = {
   pink:    "#ec4899",
 };
 
-/** Resolve a token name or pass-through a raw hex / CSS value. */
 function resolveColor(raw: string | undefined): string {
   if (!raw) return "var(--primary)";
   return COLOR_TOKENS[raw.toLowerCase()] ?? raw;
@@ -59,7 +54,6 @@ const SHAPE_DEFAULTS: Record<ShapeType, { w: number; h: number }> = {
   "arrow-left-right": { w: 180, h: 80 },
 };
 
-// SVG shapes use style prop (not attributes) so CSS variables are resolved correctly
 function renderSVGShape(
   shape: ShapeType,
   w: number,

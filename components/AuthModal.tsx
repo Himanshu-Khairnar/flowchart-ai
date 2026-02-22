@@ -68,8 +68,8 @@ export function AuthModal({ onClose, onSuccess }: AuthModalProps) {
 
   return (
     <Dialog
-      open
-      onOpenChange={(open) => {
+      open={true}
+      onOpenChange={(open: boolean) => {
         if (!open) onClose();
       }}
     >
@@ -86,10 +86,7 @@ export function AuthModal({ onClose, onSuccess }: AuthModalProps) {
             ×
           </button>
           <div className="flex items-center gap-2 mb-1">
-            <Star
-              size={20}
-              className="text-primary-foreground/80"
-            />
+            <Star size={20} className="text-primary-foreground/80" />
             <DialogTitle className="text-primary-foreground text-base font-semibold">
               {mode === "login" ? "Welcome back" : "Create account"}
             </DialogTitle>
@@ -103,7 +100,7 @@ export function AuthModal({ onClose, onSuccess }: AuthModalProps) {
 
         {/* Tabs */}
         <div className="flex border-b border-border">
-          {(["login", "signup"] as const).map((tab) => (
+          {(["login", "signup"] as const).map((tab: "login" | "signup") => (
             <button
               key={tab}
               type="button"
@@ -149,7 +146,9 @@ export function AuthModal({ onClose, onSuccess }: AuthModalProps) {
                 id="auth-username"
                 type="text"
                 value={username}
-                onChange={(e) => setUsername(e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                  setUsername(e.target.value)
+                }
                 required
                 placeholder="yourname"
                 autoComplete="username"
@@ -166,7 +165,9 @@ export function AuthModal({ onClose, onSuccess }: AuthModalProps) {
               id="auth-email"
               type="email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                setEmail(e.target.value)
+              }
               required
               placeholder="you@example.com"
               autoComplete="email"
@@ -182,7 +183,9 @@ export function AuthModal({ onClose, onSuccess }: AuthModalProps) {
               id="auth-password"
               type="password"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                setPassword(e.target.value)
+              }
               required
               placeholder="••••••••"
               minLength={6}

@@ -2,6 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { AIGenerateDialog } from "@/components/AIGenerateDialog";
+import { deleteFlowFromDb } from "@/lib/db/flows";
 import type { FlowData } from "@/types/flow";
 
 export function Header() {
@@ -17,11 +18,20 @@ export function Header() {
     }
   };
 
-  const handleClear = () => {
+  const handleClear = async () => {
     if (confirm("Clear all nodes and edges? This will reset the flowchart.")) {
-      localStorage.removeItem("flowchart-data");
-      localStorage.removeItem("flowchart-id");
-      window.location.reload();
+      try {
+        const flowId = localStorage.getItem("flowchart-id");
+        if (flowId) {
+          await deleteFlowFromDb(flowId);
+        }
+        localStorage.removeItem("flowchart-data");
+        localStorage.removeItem("flowchart-id");
+        window.location.reload();
+      } catch (error) {
+        alert("Failed to clear flowchart from database. Please try again.");
+        console.error(error);
+      }
     }
   };
 
