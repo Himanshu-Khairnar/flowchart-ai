@@ -1,10 +1,10 @@
-import { supabase, isSupabaseConfigured } from "@/lib/supabase";
+import { supabase, isSupabaseConfigured, getSessionSafe } from "@/lib/supabase";
 import type { FlowData, SaveFlowResponse, LoadFlowResponse } from "@/types/flow";
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
 async function getAuthenticatedUserId(): Promise<string | null> {
-  const { data: { session } } = await supabase.auth.getSession();
+  const { session } = await getSessionSafe();
   return session?.user?.id ?? null;
 }
 
@@ -30,21 +30,20 @@ export async function saveFlowToDb(
     if (!userId) return { success: false, error: "Not authenticated" };
 
     if (flowId) {
-      // UPDATE existing flow
-      const { data, error } = await supabase
+      // UPDATE existing flow — no RETURNING needed; we already know the id.
+      // Using RETURNING would require SELECT permission on the updated row,
+      // which can fail for editor-collaborators even though the UPDATE itself succeeds.
+      const { error } = await supabase
         .from("flows")
         .update({
           name: flowData.name ?? "Untitled Flow",
           description: flowData.description ?? "",
           flow_data: flowData,
         })
-        .eq("id", flowId)
-        .select("id")
-        .maybeSingle();
+        .eq("id", flowId);
 
       if (error) throw error;
-      if (!data) throw new Error("Update returned no rows — flow may not exist or access denied");
-      return { success: true, id: data.id };
+      return { success: true, id: flowId };
     } else {
       // INSERT new flow
       const { data, error } = await supabase
@@ -150,6 +149,37 @@ export async function deleteFlowFromDb(flowId: string) {
   }
 }
 
+/** Get a single flow's public status. */
+export async function getFlowIsPublic(flowId: string): Promise<boolean> {
+  if (!isSupabaseConfigured()) return false;
+  const { data, error } = await supabase
+    .from("flows")
+    .select("is_public")
+    .eq("id", flowId)
+    .maybeSingle();
+  if (error) { console.error("getFlowIsPublic:", error); return false; }
+  return data?.is_public ?? false;
+}
+
+/** Toggle a flow's public visibility (owner only). */
+export async function toggleFlowPublic(
+  flowId: string,
+  isPublic: boolean
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    if (!isSupabaseConfigured()) return { success: false, error: "Supabase not configured" };
+    const { error } = await supabase
+      .from("flows")
+      .update({ is_public: isPublic })
+      .eq("id", flowId);
+    if (error) throw error;
+    return { success: true };
+  } catch (error) {
+    console.error("Error toggling flow public:", error);
+    return { success: false, error: error instanceof Error ? error.message : "Unknown error" };
+  }
+}
+
 // ─── collaborator management ──────────────────────────────────────────────────
 
 export type CollaboratorRole = "viewer" | "editor";
@@ -161,23 +191,29 @@ export interface Collaborator {
   email?: string;
 }
 
-/** List collaborators for a flow (owner only). */
+/** List collaborators for a flow, including their emails. */
 export async function getCollaborators(flowId: string): Promise<{ success: boolean; data?: Collaborator[]; error?: string }> {
-  try {
-    if (!isSupabaseConfigured()) return { success: false, error: "Supabase not configured" };
+  if (!isSupabaseConfigured()) return { success: false, error: "Supabase not configured" };
 
-    const { data, error } = await supabase
-      .from("flow_collaborators")
-      .select("user_id, role, created_at")
-      .eq("flow_id", flowId)
-      .order("created_at", { ascending: true });
+  const { data, error } = await supabase.rpc("get_flow_collaborators", { p_flow_id: flowId });
 
-    if (error) throw error;
-    return { success: true, data: data as Collaborator[] };
-  } catch (error) {
-    console.error("Error fetching collaborators:", error);
-    return { success: false, error: error instanceof Error ? error.message : "Unknown error" };
+  if (error) {
+    const msg = error.message || error.code || "Failed to load collaborators";
+    console.error("get_flow_collaborators RPC error:", error.code, error.message);
+    if (error.code === "42883" || msg.includes("does not exist")) {
+      return { success: false, error: "DB function missing — run supabase-schema.sql in your Supabase project" };
+    }
+    return { success: false, error: msg };
   }
+
+  const rows: Collaborator[] = (data ?? []).map((r: any) => ({
+    user_id:    r.user_id,
+    role:       r.role as CollaboratorRole,
+    created_at: r.created_at,
+    email:      r.email ?? undefined,
+  }));
+
+  return { success: true, data: rows };
 }
 
 /**

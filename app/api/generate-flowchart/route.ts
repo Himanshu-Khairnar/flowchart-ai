@@ -21,10 +21,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Invalid or expired session" }, { status: 401 });
     }
 
-    const { prompt } = await request.json();
+    const { prompt, context } = await request.json();
 
     if (!prompt) {
       return NextResponse.json({ error: "Prompt is required" }, { status: 400 });
+    }
+
+    // Build context block from previous session messages (last 8, truncated)
+    let contextBlock = "";
+    if (Array.isArray(context) && context.length > 0) {
+      const recent = context.slice(-8);
+      const lines = recent.map((m: { role: string; content: string }) =>
+        `${m.role === "user" ? "User" : "Assistant"}: ${m.content.slice(0, 250)}`
+      );
+      contextBlock = `\nSESSION CONTEXT (previous exchanges — use this to understand the user's intent and style preferences):\n${lines.join("\n")}\n\nNow handle this new request (generate fresh JSON, do not reference context literally):\n`;
     }
 
     if (!process.env.GEMINI_API_KEY) {
@@ -70,7 +80,8 @@ DO NOT USE these shapes in standard flowcharts — they exist only for specializ
 
 Special nodes (use only when explicitly needed):
   "stickyNote" → Annotation or side-note only; data: { label, color? }
-  "database"   → DB schema table (ER diagrams only); data: { label, columns: [{name, type, isPrimary?}] }
+  "database"   → DB schema table (ER diagrams only); data: { label, columns: [{name, type, isPrimary?, isForeignKey?, references?}] }
+               references field = "TableName.columnName" (e.g. "users.id")
 
 ─── SHAPE SELECTION RULE ─────────────────────────────────────────────────────
   Default = "process". Only upgrade to a specialty shape when the label itself
@@ -78,7 +89,29 @@ Special nodes (use only when explicitly needed):
   "Read CSV File" → parallelogram, "Generate Report" → document).
   When in doubt, use "process".
 
-─── EDGE OPTIONS ─────────────────────────────────────────────────────────────
+─── ER DIAGRAM / DATABASE SCHEMA ─────────────────────────────────────────────
+  When the prompt asks for a database schema, ER diagram, tables, or entities:
+
+  LAYOUT: Arrange tables in a grid (3–4 columns). Space 320px horizontally,
+  280px vertically. Do NOT use terminal/process/decision nodes in ER diagrams.
+
+  TABLES: Every table = one "database" node. Include realistic columns:
+  - First column is always the PK (isPrimary: true), named "id", type "uuid"
+  - Foreign key columns: isForeignKey: true, references: "TargetTable.id"
+  - Common FK naming: "user_id", "order_id", "product_id", etc.
+
+  RELATIONSHIPS (EDGES): Create an edge for EVERY foreign key relationship:
+  - source = the table with the FK column
+  - target = the table being referenced
+  - sourceHandle = "r" or "b" depending on layout direction
+  - targetHandle = "l" or "t" depending on layout direction
+  - label = relationship cardinality: "1:N", "N:1", "1:1", or "N:M"
+  - For N:M relationships, show a junction table in between
+
+  EXAMPLE ER edge: FK in orders.user_id → users.id becomes:
+  {"id":"e1","source":"orders","target":"users","sourceHandle":"r","targetHandle":"l","label":"N:1"}
+
+─── EDGE OPTIONS (non-ER) ────────────────────────────────────────────────────
   Edges can have: label (string), sourceHandle (string), targetHandle (string)
   Available handles for ALL nodes: "t" (top), "b" (bottom), "l" (left), "r" (right)
 
@@ -142,7 +175,7 @@ Remember: Output ONLY the JSON object. Use "process" as the default node — onl
     const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
     const result = await model.generateContent(
-      `${systemPrompt}\n\nUser request: ${prompt}\n\nGenerate the flowchart JSON:`
+      `${systemPrompt}${contextBlock}\n\nUser request: ${prompt}\n\nGenerate the flowchart JSON:`
     );
 
     const response = await result.response;
