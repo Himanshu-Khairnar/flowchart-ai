@@ -9,7 +9,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import {
   ChevronDown,
-  Zap,
   Hand,
   Square,
   Circle,
@@ -38,6 +37,7 @@ import {
   Lock,
   ArrowUpLeft,
   Image,
+  Plus,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SidebarTrigger, useSidebar } from "@/components/ui/sidebar";
@@ -123,12 +123,12 @@ const toolGroups: { label: string; tools: ToolButton[] }[] = [
       {
         id: "terminal-start",
         label: "Start (S)",
-        icon: <Play size={18} style={{ color: "var(--chart-2)" }} />,
+        icon: <Play size={18} className="text-emerald-500" />,
       },
       {
         id: "terminal-end",
         label: "End (E)",
-        icon: <Stop size={18} style={{ color: "var(--destructive)" }} />,
+        icon: <Stop size={18} className="text-red-500" />,
       },
     ],
   },
@@ -272,10 +272,10 @@ export function FloatingToolbar({
 
   return (
     <>
-      <div className="fixed bottom-5 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-0.5 bg-popover border border-border rounded-2xl shadow-xl px-1.5 py-1 max-w-[95vw] overflow-x-auto">
+      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center gap-0.5 bg-background/80 backdrop-blur-xl border border-border/50 rounded-full shadow-2xl px-2 py-1.5 max-w-[95%] overflow-x-auto ring-1 ring-black/5 dark:ring-white/5 transition-all">
         {toolGroups.map((group, gi) => (
           <div key={group.label} className="flex items-center gap-0.5">
-            {gi > 0 && <div className="w-px h-5 bg-border/70 mx-1" />}
+            {gi > 0 && <div className="w-px h-5 bg-border mx-1" />}
             {group.tools.map((tool) => (
               <button
                 key={tool.id}
@@ -284,60 +284,36 @@ export function FloatingToolbar({
                 onMouseLeave={() => setTooltip(null)}
                 title={tool.label}
                 className={[
-                  "relative w-9 h-9 flex items-center justify-center rounded-xl transition-all duration-150",
+                  "relative w-8 h-8 flex items-center justify-center rounded-lg transition-all duration-200",
                   activeTool === tool.id
-                    ? "bg-primary/10 text-primary shadow-sm"
-                    : "text-muted-foreground hover:text-foreground hover:bg-accent/60",
+                    ? "bg-primary text-primary-foreground shadow-sm scale-105"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted/60",
                 ].join(" ")}
               >
-                <span className={activeTool === tool.id ? "scale-105" : ""}>
+                {/* Scale icons down slightly */}
+                <div className="scale-90">
                   {tool.icon}
-                </span>
-                {activeTool === tool.id && (
-                  <span className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-primary" />
-                )}
+                </div>
               </button>
             ))}
           </div>
         ))}
-
-        <div className="w-px h-5 bg-border/70 mx-1" />
-        <button
-          onClick={onAIClick}
-          onMouseEnter={() =>
-            setTooltip(user ? "AI Generate" : "Sign in to use AI")
-          }
-          onMouseLeave={() => setTooltip(null)}
-          className={[
-            "relative w-9 h-9 flex items-center justify-center rounded-xl transition-all duration-150",
-            user
-              ? "bg-primary text-primary-foreground shadow-md hover:bg-primary/90"
-              : "bg-muted text-muted-foreground hover:bg-accent hover:text-foreground",
-          ].join(" ")}
-        >
-          <Sparkles size={16} />
-          {!user && (
-            <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-amber-400 border-2 border-popover text-[7px] flex items-center justify-center">
-              🔒
-            </span>
-          )}
-        </button>
       </div>
 
       <div
-        className="fixed top-0 right-0 z-[90] h-14 flex items-center justify-between px-4 md:px-3 bg-background/95 backdrop-blur-sm border-b border-border transition-[left] duration-200 ease-linear"
-        style={{ left: sidebarOpen ? "var(--sidebar-width, 16rem)" : "0px" }}
+        className="absolute top-0 left-0 right-0 z-40 h-14 flex items-center justify-between px-4 bg-background/80 backdrop-blur-md border-b border-border/50"
       >
-        <div className="flex items-center gap-2 flex-1 min-w-0">
-          <SidebarTrigger className="shrink-0 text-muted-foreground hover:text-foreground" />
+        <div className="flex items-center gap-3 flex-1 min-w-0">
+          <SidebarTrigger className="shrink-0 text-muted-foreground hover:text-foreground transition-colors" />
+          <div className="h-6 w-px bg-border/60" />
           <input
             value={flowName}
             onChange={(e) => onNameChange(e.target.value)}
-            className="text-sm font-semibold text-foreground bg-transparent border-none outline-none px-2 py-1 rounded-md hover:bg-accent/50 focus:bg-accent transition-colors min-w-0 max-w-[200px] truncate"
+            className="text-sm font-medium text-foreground bg-transparent border-none outline-none px-2 py-1 rounded-md hover:bg-muted/50 focus:bg-muted transition-colors min-w-0 max-w-[240px] truncate"
             placeholder="Untitled Flowchart"
           />
           <div
-            className="hidden sm:flex items-center gap-1.5 text-[11px] text-muted-foreground font-medium shrink-0"
+            className="hidden sm:flex items-center gap-1.5 text-[10px] uppercase tracking-wider font-semibold text-muted-foreground/80 shrink-0 select-none"
             title={
               effectiveSaveStatus === "saved-local"
                 ? "Saved to browser storage — sign in to sync to cloud"
@@ -345,48 +321,48 @@ export function FloatingToolbar({
             }
           >
             <span
-              className={`w-1.5 h-1.5 rounded-full ${SAVE_DOT[effectiveSaveStatus]}`}
+              className={`w-2 h-2 rounded-full ${SAVE_DOT[effectiveSaveStatus]} shadow-sm`}
             />
             {SAVE_LABEL[effectiveSaveStatus]}
           </div>
         </div>
 
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-2">
           {/* Save */}
           <Button
-            variant="outline"
+            variant="ghost"
             size="sm"
             onClick={onManualSave}
-            className="gap-1.5 h-8 text-xs"
+            className="gap-2 h-9 text-xs font-medium text-muted-foreground hover:text-foreground"
           >
-            <Save size={14} />
+            <Save size={16} />
             <span className="hidden sm:inline">Save</span>
           </Button>
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
-                variant="outline"
+                variant="ghost"
                 size="sm"
-                className="gap-1.5 h-8 text-xs"
+                className="gap-2 h-9 text-xs font-medium text-muted-foreground hover:text-foreground"
               >
-                <Download size={14} />
+                <Download size={16} />
                 <span className="hidden sm:inline">Export</span>
-                <ChevronDown size={9} className="opacity-50" />
+                <ChevronDown size={10} className="opacity-50" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-44">
+            <DropdownMenuContent align="end" className="w-48">
               <DropdownMenuItem
                 onClick={onSave}
                 className="gap-2 cursor-pointer text-xs"
               >
-                <FileText size={13} /> Export as JSON
+                <FileText size={14} /> Export JSON
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={onExportViewport}
                 className="gap-2 cursor-pointer text-xs"
               >
-                <Image size={13} /> Export as PNG
+                <Image size={14} /> Export PNG
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -402,10 +378,10 @@ export function FloatingToolbar({
                   : "Private — click to make public"
               }
               className={[
-                "gap-1.5 h-8 text-xs",
+                "gap-2 h-9 text-xs border-dashed",
                 isPublic
-                  ? "border-emerald-400/60 text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700"
-                  : "",
+                  ? "border-emerald-500/50 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/20"
+                  : "text-muted-foreground",
               ].join(" ")}
             >
               {isPublic ? <Globe size={14} /> : <Lock size={14} />}
@@ -415,20 +391,22 @@ export function FloatingToolbar({
             </Button>
           )}
 
+          <div className="h-6 w-px bg-border/60 mx-1" />
+
           <Button
-            variant="outline"
+            variant="ghost"
             size="sm"
             onClick={onClear}
-            className="gap-1.5 h-8 text-xs"
+            className="gap-2 h-9 text-xs font-medium hover:bg-muted"
           >
-            <Trash2 size={14} />
+            <Plus size={16} />
             <span className="hidden md:inline">New</span>
           </Button>
         </div>
       </div>
 
       {tooltip && (
-        <div className="fixed bottom-16 left-1/2 -translate-x-1/2 z-[200] bg-popover border border-border text-foreground text-xs font-medium px-2.5 py-1 rounded-lg shadow-md pointer-events-none whitespace-nowrap">
+        <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-[200] bg-foreground text-background text-xs font-medium px-3 py-1.5 rounded-full shadow-lg pointer-events-none whitespace-nowrap animate-in fade-in zoom-in-95 duration-200">
           {tooltip}
         </div>
       )}

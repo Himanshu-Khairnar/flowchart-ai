@@ -34,6 +34,7 @@ import {
   getViewportForBounds,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
+import { toPng } from "html-to-image";
 import { saveFlowToDb, loadFlowFromDb } from "@/lib/db/flows";
 import { supabase, getSessionSafe } from "@/lib/supabase";
 import type { FlowData } from "@/types/flow";
@@ -41,7 +42,15 @@ import { ShapeNode } from "./nodes/ShapeNode";
 import { StickyNoteNode } from "./nodes/StickyNoteNode";
 import { DatabaseNode } from "./nodes/DatabaseNode";
 import type { ToolType } from "./FloatingToolbar";
-import { toPng } from "html-to-image";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 function ProcessNode({
   data,
@@ -67,19 +76,12 @@ function ProcessNode({
 
   return (
     <div
+      className="bg-card border-2 border-border rounded-lg shadow-sm flex items-center justify-center box-border transition-shadow hover:shadow-md"
       style={{
-        background: "var(--card)",
-        border: "2px solid var(--border)",
-        borderRadius: "var(--radius)",
         width: w,
         height: h,
         minWidth: 80,
         minHeight: 36,
-        boxSizing: "border-box",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
       }}
     >
       <NodeResizer
@@ -103,54 +105,32 @@ function ProcessNode({
         type="source"
         position={Position.Top}
         id="t"
-        style={{
-          background: "var(--border)",
-          border: "2px solid var(--background)",
-        }}
+        className="w-2 h-2 !bg-muted-foreground !border-2 !border-background hover:!bg-primary transition-colors"
       />
       <Handle
         type="source"
         position={Position.Left}
         id="l"
-        style={{
-          background: "var(--border)",
-          border: "2px solid var(--background)",
-        }}
+        className="w-2 h-2 !bg-muted-foreground !border-2 !border-background hover:!bg-primary transition-colors"
       />
       <Handle
         type="source"
         position={Position.Bottom}
         id="b"
-        style={{
-          background: "var(--border)",
-          border: "2px solid var(--background)",
-        }}
+        className="w-2 h-2 !bg-muted-foreground !border-2 !border-background hover:!bg-primary transition-colors"
       />
       <Handle
         type="source"
         position={Position.Right}
         id="r"
-        style={{
-          background: "var(--border)",
-          border: "2px solid var(--background)",
-        }}
+        className="w-2 h-2 !bg-muted-foreground !border-2 !border-background hover:!bg-primary transition-colors"
       />
 
       <input
-        className="nodrag"
+        className="nodrag bg-transparent border-none text-center text-sm font-medium w-[90%] outline-none text-card-foreground placeholder:text-muted-foreground/50"
         value={data.label || ""}
         onChange={onChange}
         placeholder="Process"
-        style={{
-          background: "transparent",
-          border: "none",
-          textAlign: "center",
-          fontSize: 13,
-          fontWeight: 500,
-          width: "90%",
-          outline: "none",
-          color: "var(--foreground)",
-        }}
       />
     </div>
   );
@@ -209,108 +189,51 @@ function DecisionNode({
         type="source"
         position={Position.Top}
         id="t"
-        style={{
-          background: "var(--chart-3)",
-          border: "2px solid var(--background)",
-          zIndex: 10,
-        }}
+        className="!bg-chart-3 !border-2 !border-background z-10 w-2 h-2"
       />
       <Handle
         type="source"
         position={Position.Bottom}
         id="yes"
-        style={{
-          background: "var(--chart-2)",
-          border: "2px solid var(--background)",
-          zIndex: 10,
-        }}
+        className="!bg-emerald-500 !border-2 !border-background z-10 w-2 h-2"
       />
       <Handle
         type="source"
         position={Position.Right}
         id="no"
-        style={{
-          background: "var(--destructive)",
-          border: "2px solid var(--background)",
-          zIndex: 10,
-        }}
+        className="!bg-rose-500 !border-2 !border-background z-10 w-2 h-2"
       />
       <Handle
         type="source"
         position={Position.Left}
         id="l"
-        style={{
-          background: "var(--chart-3)",
-          border: "2px solid var(--background)",
-          zIndex: 10,
-        }}
+        className="!bg-chart-3 !border-2 !border-background z-10 w-2 h-2"
       />
 
       <svg
         width={w}
         height={h}
         viewBox={`0 0 ${w} ${h}`}
-        style={{ position: "absolute", top: 0, left: 0 }}
+        className="absolute top-0 left-0 drop-shadow-sm"
+        style={{ overflow: "visible" }}
       >
         <polygon
-          points={`${w / 2},4 ${w - 4},${h / 2} ${w / 2},${h - 4} 4,${h / 2}`}
-          fill="var(--card)"
-          stroke="var(--chart-3)"
-          strokeWidth="2"
+          points={`${w / 2},0 ${w},${h / 2} ${w / 2},${h} 0,${h / 2}`}
+          className="fill-card stroke-2 stroke-chart-3"
         />
       </svg>
-      <div
-        style={{
-          position: "absolute",
-          inset: 0,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-      >
+      <div className="absolute inset-0 flex items-center justify-center z-10">
         <input
-          className="nodrag"
+          className="nodrag bg-transparent border-none text-center text-xs font-medium w-[60%] outline-none text-card-foreground placeholder:text-muted-foreground/50"
           value={data.label || ""}
           onChange={onChange}
           placeholder="Decision?"
-          style={{
-            background: "transparent",
-            border: "none",
-            textAlign: "center",
-            fontSize: 12,
-            fontWeight: 500,
-            width: "70%",
-            outline: "none",
-            color: "var(--foreground)",
-          }}
         />
       </div>
-      <div
-        style={{
-          position: "absolute",
-          bottom: -16,
-          left: "50%",
-          transform: "translateX(-50%)",
-          fontSize: 9,
-          color: "var(--chart-2)",
-          fontWeight: 600,
-          pointerEvents: "none",
-        }}
-      >
+      <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 text-[9px] font-bold text-emerald-600 pointer-events-none bg-background/80 px-1 rounded">
         Yes
       </div>
-      <div
-        style={{
-          position: "absolute",
-          right: -20,
-          top: "50%",
-          transform: "translateY(-50%)",
-          fontSize: 9,
-          color: "var(--destructive)",
-          fontWeight: 600,
-          pointerEvents: "none",
-        }}
-      >
+      <div className="absolute -right-3 top-1/2 -translate-y-1/2 text-[9px] font-bold text-rose-600 pointer-events-none bg-background/80 px-1 rounded">
         No
       </div>
     </div>
@@ -331,8 +254,10 @@ function TerminalNode({
   height?: number;
 }) {
   const isStart = data.terminalType !== "end";
+  // Using tailwind colors via style or className would be better, but dynamic is tricky.
+  // We'll stick to CSS vars but cleaner.
   const color = isStart ? "var(--chart-2)" : "var(--destructive)";
-  const bgColor = isStart ? "var(--background)" : "var(--background)";
+
   const w = width || 130;
   const h = height || 44;
 
@@ -344,19 +269,13 @@ function TerminalNode({
 
   return (
     <div
+      className="bg-card border-2 rounded-full shadow-sm flex items-center justify-center box-border transition-shadow hover:shadow-md"
       style={{
-        background: bgColor,
-        border: `2px solid ${color}`,
-        borderRadius: "100px",
+        borderColor: color,
         width: w,
         height: h,
         minWidth: 80,
         minHeight: 32,
-        boxSizing: "border-box",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        boxShadow: `0 2px 8px rgba(0,0,0,0.05)`,
       }}
     >
       <NodeResizer
@@ -376,42 +295,37 @@ function TerminalNode({
         type="source"
         position={Position.Top}
         id="t"
-        style={{ background: color, border: "2px solid var(--background)" }}
+        className="!border-2 !border-background w-2 h-2"
+        style={{ background: color }}
       />
       <Handle
         type="source"
         position={Position.Left}
         id="l"
-        style={{ background: color, border: "2px solid var(--background)" }}
+        className="!border-2 !border-background w-2 h-2"
+        style={{ background: color }}
       />
       <Handle
         type="source"
         position={Position.Bottom}
         id="b"
-        style={{ background: color, border: "2px solid var(--background)" }}
+        className="!border-2 !border-background w-2 h-2"
+        style={{ background: color }}
       />
       <Handle
         type="source"
         position={Position.Right}
         id="r"
-        style={{ background: color, border: "2px solid var(--background)" }}
+        className="!border-2 !border-background w-2 h-2"
+        style={{ background: color }}
       />
 
       <input
-        className="nodrag"
+        className="nodrag bg-transparent border-none text-center text-sm font-bold w-[80%] outline-none"
+        style={{ color }}
         value={data.label || ""}
         onChange={onChange}
         placeholder={isStart ? "Start" : "End"}
-        style={{
-          background: "transparent",
-          border: "none",
-          textAlign: "center",
-          fontSize: 13,
-          fontWeight: 600,
-          width: "80%",
-          outline: "none",
-          color,
-        }}
       />
     </div>
   );
@@ -555,6 +469,8 @@ function FlowContent({
   const [currentFlowId, setCurrentFlowId] = useState<string | null>(
     initialId || null,
   );
+  const [saveError, setSaveError] = useState<string | null>(null);
+
   const { screenToFlowPosition, getNodes, getEdges, getViewport } =
     useReactFlow();
   const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -722,7 +638,7 @@ function FlowContent({
         setSaveStatus("unsaved");
         console.error("Auto-save error:", result.error);
       }
-    }, 3000);
+    }, 1000);
 
     return () => {
       if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
@@ -791,8 +707,9 @@ function FlowContent({
     const newEdge: Edge = {
       ...connection,
       markerEnd: { type: MarkerType.ArrowClosed },
-      style: { strokeWidth: 1.5 },
+      style: { strokeWidth: 2, stroke: "var(--muted-foreground)" },
       id: `edge-${Date.now()}`,
+      animated: true,
     } as Edge;
     setEdges((eds) => addEdge(newEdge, eds));
     channelRef.current?.send({
@@ -997,7 +914,7 @@ function FlowContent({
       }
     } else {
       setSaveStatus("unsaved");
-      alert("Save failed: " + (result.error || "Unknown error"));
+      setSaveError(result.error || "Unknown error occurred while saving.");
     }
   }, [nodes, edges, setSaveStatus, flowName]);
 
@@ -1060,8 +977,12 @@ function FlowContent({
         deleteKeyCode="Delete"
         connectionLineType={ConnectionLineType.Bezier}
         defaultEdgeOptions={{
-          style: { strokeWidth: 1.5, stroke: "#94a3b8" },
-          markerEnd: { type: MarkerType.ArrowClosed, color: "#94a3b8" },
+          style: { strokeWidth: 2, stroke: "var(--muted-foreground)" },
+          markerEnd: {
+            type: MarkerType.ArrowClosed,
+            color: "var(--muted-foreground)",
+          },
+          animated: true,
         }}
         panOnDrag={activeTool === "pan" || activeTool === "select"}
         selectionOnDrag={activeTool === "select"}
@@ -1073,33 +994,53 @@ function FlowContent({
       >
         <Background
           variant={BackgroundVariant.Dots}
-          gap={20}
-          size={1}
-          color="#94a3b8"
-          style={{ opacity: 0.4 }}
+          gap={24}
+          size={1.5}
+          color="var(--muted-foreground)"
+          style={{ opacity: 0.15 }}
         />
         <Controls
           style={{
-            bottom: 16,
-            right: 16,
+            bottom: 20,
+            right: 20,
             left: "auto",
-            borderRadius: 10,
-            border: "1px solid rgba(0,0,0,0.08)",
-            boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+            borderRadius: 12,
+            border: "1px solid var(--border)",
+            boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
             overflow: "hidden",
+            backgroundColor: "var(--card)",
+            color: "var(--foreground)",
+            padding: 2,
           }}
         />
         <MiniMap
           style={{
-            bottom: 16,
-            right: 120,
-            borderRadius: 10,
-            border: "1px solid rgba(0,0,0,0.08)",
-            boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+            bottom: 160,
+            right: 20,
+            borderRadius: 12,
+            border: "1px solid var(--border)",
+            boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+            backgroundColor: "var(--card)",
           }}
-          maskColor="rgba(148, 163, 184, 0.2)"
+          maskColor="var(--background)"
+          nodeColor={() => "var(--muted)"}
         />
       </ReactFlow>
+
+      <AlertDialog
+        open={!!saveError}
+        onOpenChange={(open) => !open && setSaveError(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Save Failed</AlertDialogTitle>
+            <AlertDialogDescription>{saveError}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction>Dismiss</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
