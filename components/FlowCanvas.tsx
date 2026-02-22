@@ -43,164 +43,450 @@ import { DatabaseNode } from "./nodes/DatabaseNode";
 import type { ToolType } from "./FloatingToolbar";
 import { toPng } from "html-to-image";
 
-function ProcessNode({ data, id, selected, width, height }: { data: any; id: string; selected?: boolean; width?: number; height?: number }) {
-  const w = width  || 160;
+function ProcessNode({
+  data,
+  id,
+  selected,
+  width,
+  height,
+}: {
+  data: any;
+  id: string;
+  selected?: boolean;
+  width?: number;
+  height?: number;
+}) {
+  const w = width || 160;
   const h = height || 50;
 
   const onChange = useCallback(
-    (evt: React.ChangeEvent<HTMLInputElement>) => data.onChange?.(id, evt.target.value),
-    [id, data]
+    (evt: React.ChangeEvent<HTMLInputElement>) =>
+      data.onChange?.(id, evt.target.value),
+    [id, data],
   );
 
   return (
     <div
       style={{
-        background: "var(--card)", border: "2px solid var(--border)", borderRadius: "var(--radius)",
-        width: w, height: h, minWidth: 80, minHeight: 36,
-        boxSizing: "border-box", display: "flex", alignItems: "center", justifyContent: "center",
+        background: "var(--card)",
+        border: "2px solid var(--border)",
+        borderRadius: "var(--radius)",
+        width: w,
+        height: h,
+        minWidth: 80,
+        minHeight: 36,
+        boxSizing: "border-box",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
         boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
       }}
     >
       <NodeResizer
         isVisible={selected}
-        minWidth={80} minHeight={36}
-        lineStyle={{ borderColor: "var(--primary)", borderWidth: 1, opacity: 0.6 }}
-        handleStyle={{ width: 8, height: 8, borderRadius: 2, background: "var(--primary)", border: "1.5px solid var(--background)" }}
+        minWidth={80}
+        minHeight={36}
+        lineStyle={{
+          borderColor: "var(--primary)",
+          borderWidth: 1,
+          opacity: 0.6,
+        }}
+        handleStyle={{
+          width: 8,
+          height: 8,
+          borderRadius: 2,
+          background: "var(--primary)",
+          border: "1.5px solid var(--background)",
+        }}
       />
-      <Handle type="source" position={Position.Top}    id="t" style={{ background: "var(--border)", border: "2px solid var(--background)" }} />
-      <Handle type="source" position={Position.Left}   id="l" style={{ background: "var(--border)", border: "2px solid var(--background)" }} />
-      <Handle type="source" position={Position.Bottom} id="b" style={{ background: "var(--border)", border: "2px solid var(--background)" }} />
-      <Handle type="source" position={Position.Right}  id="r" style={{ background: "var(--border)", border: "2px solid var(--background)" }} />
-      
+      <Handle
+        type="source"
+        position={Position.Top}
+        id="t"
+        style={{
+          background: "var(--border)",
+          border: "2px solid var(--background)",
+        }}
+      />
+      <Handle
+        type="source"
+        position={Position.Left}
+        id="l"
+        style={{
+          background: "var(--border)",
+          border: "2px solid var(--background)",
+        }}
+      />
+      <Handle
+        type="source"
+        position={Position.Bottom}
+        id="b"
+        style={{
+          background: "var(--border)",
+          border: "2px solid var(--background)",
+        }}
+      />
+      <Handle
+        type="source"
+        position={Position.Right}
+        id="r"
+        style={{
+          background: "var(--border)",
+          border: "2px solid var(--background)",
+        }}
+      />
+
       <input
         className="nodrag"
         value={data.label || ""}
         onChange={onChange}
         placeholder="Process"
         style={{
-          background: "transparent", border: "none", textAlign: "center",
-          fontSize: 13, fontWeight: 500, width: "90%", outline: "none", color: "var(--foreground)",
+          background: "transparent",
+          border: "none",
+          textAlign: "center",
+          fontSize: 13,
+          fontWeight: 500,
+          width: "90%",
+          outline: "none",
+          color: "var(--foreground)",
         }}
       />
     </div>
   );
 }
 
-function DecisionNode({ data, id, selected, width, height }: { data: any; id: string; selected?: boolean; width?: number; height?: number }) {
-  const w = width  || 130;
+function DecisionNode({
+  data,
+  id,
+  selected,
+  width,
+  height,
+}: {
+  data: any;
+  id: string;
+  selected?: boolean;
+  width?: number;
+  height?: number;
+}) {
+  const w = width || 130;
   const h = height || 130;
 
   const onChange = useCallback(
-    (evt: React.ChangeEvent<HTMLInputElement>) => data.onChange?.(id, evt.target.value),
-    [id, data]
+    (evt: React.ChangeEvent<HTMLInputElement>) =>
+      data.onChange?.(id, evt.target.value),
+    [id, data],
   );
 
   return (
-    <div style={{ position: "relative", width: w, height: h, minWidth: 80, minHeight: 80 }}>
+    <div
+      style={{
+        position: "relative",
+        width: w,
+        height: h,
+        minWidth: 80,
+        minHeight: 80,
+      }}
+    >
       <NodeResizer
         isVisible={selected}
-        minWidth={80} minHeight={80}
-        lineStyle={{ borderColor: "var(--chart-3)", borderWidth: 1, opacity: 0.6 }}
-        handleStyle={{ width: 8, height: 8, borderRadius: 2, background: "var(--chart-3)", border: "1.5px solid var(--background)" }}
+        minWidth={80}
+        minHeight={80}
+        lineStyle={{
+          borderColor: "var(--chart-3)",
+          borderWidth: 1,
+          opacity: 0.6,
+        }}
+        handleStyle={{
+          width: 8,
+          height: 8,
+          borderRadius: 2,
+          background: "var(--chart-3)",
+          border: "1.5px solid var(--background)",
+        }}
       />
-      <Handle type="source" position={Position.Top}    id="t" style={{ background: "var(--chart-3)", border: "2px solid var(--background)", zIndex: 10 }} />
-      <Handle type="source" position={Position.Bottom} id="yes" style={{ background: "var(--chart-2)", border: "2px solid var(--background)", zIndex: 10 }} />
-      <Handle type="source" position={Position.Right}  id="no"  style={{ background: "var(--destructive)", border: "2px solid var(--background)", zIndex: 10 }} />
-      <Handle type="source" position={Position.Left}   id="l" style={{ background: "var(--chart-3)", border: "2px solid var(--background)", zIndex: 10 }} />
-      
-      <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} style={{ position: "absolute", top: 0, left: 0 }}>
+      <Handle
+        type="source"
+        position={Position.Top}
+        id="t"
+        style={{
+          background: "var(--chart-3)",
+          border: "2px solid var(--background)",
+          zIndex: 10,
+        }}
+      />
+      <Handle
+        type="source"
+        position={Position.Bottom}
+        id="yes"
+        style={{
+          background: "var(--chart-2)",
+          border: "2px solid var(--background)",
+          zIndex: 10,
+        }}
+      />
+      <Handle
+        type="source"
+        position={Position.Right}
+        id="no"
+        style={{
+          background: "var(--destructive)",
+          border: "2px solid var(--background)",
+          zIndex: 10,
+        }}
+      />
+      <Handle
+        type="source"
+        position={Position.Left}
+        id="l"
+        style={{
+          background: "var(--chart-3)",
+          border: "2px solid var(--background)",
+          zIndex: 10,
+        }}
+      />
+
+      <svg
+        width={w}
+        height={h}
+        viewBox={`0 0 ${w} ${h}`}
+        style={{ position: "absolute", top: 0, left: 0 }}
+      >
         <polygon
           points={`${w / 2},4 ${w - 4},${h / 2} ${w / 2},${h - 4} 4,${h / 2}`}
-          fill="var(--card)" stroke="var(--chart-3)" strokeWidth="2"
+          fill="var(--card)"
+          stroke="var(--chart-3)"
+          strokeWidth="2"
         />
       </svg>
-      <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
         <input
           className="nodrag"
           value={data.label || ""}
           onChange={onChange}
           placeholder="Decision?"
           style={{
-            background: "transparent", border: "none", textAlign: "center",
-            fontSize: 12, fontWeight: 500, width: "70%", outline: "none", color: "var(--foreground)",
+            background: "transparent",
+            border: "none",
+            textAlign: "center",
+            fontSize: 12,
+            fontWeight: 500,
+            width: "70%",
+            outline: "none",
+            color: "var(--foreground)",
           }}
         />
       </div>
-      <div style={{ position: "absolute", bottom: -16, left: "50%", transform: "translateX(-50%)", fontSize: 9, color: "var(--chart-2)", fontWeight: 600, pointerEvents: "none" }}>Yes</div>
-      <div style={{ position: "absolute", right: -20, top: "50%", transform: "translateY(-50%)", fontSize: 9, color: "var(--destructive)", fontWeight: 600, pointerEvents: "none" }}>No</div>
+      <div
+        style={{
+          position: "absolute",
+          bottom: -16,
+          left: "50%",
+          transform: "translateX(-50%)",
+          fontSize: 9,
+          color: "var(--chart-2)",
+          fontWeight: 600,
+          pointerEvents: "none",
+        }}
+      >
+        Yes
+      </div>
+      <div
+        style={{
+          position: "absolute",
+          right: -20,
+          top: "50%",
+          transform: "translateY(-50%)",
+          fontSize: 9,
+          color: "var(--destructive)",
+          fontWeight: 600,
+          pointerEvents: "none",
+        }}
+      >
+        No
+      </div>
     </div>
   );
 }
 
-function TerminalNode({ data, id, selected, width, height }: { data: any; id: string; selected?: boolean; width?: number; height?: number }) {
+function TerminalNode({
+  data,
+  id,
+  selected,
+  width,
+  height,
+}: {
+  data: any;
+  id: string;
+  selected?: boolean;
+  width?: number;
+  height?: number;
+}) {
   const isStart = data.terminalType !== "end";
-  const color   = isStart ? "var(--chart-2)" : "var(--destructive)";
+  const color = isStart ? "var(--chart-2)" : "var(--destructive)";
   const bgColor = isStart ? "var(--background)" : "var(--background)";
-  const w = width  || 130;
+  const w = width || 130;
   const h = height || 44;
 
   const onChange = useCallback(
-    (evt: React.ChangeEvent<HTMLInputElement>) => data.onChange?.(id, evt.target.value),
-    [id, data]
+    (evt: React.ChangeEvent<HTMLInputElement>) =>
+      data.onChange?.(id, evt.target.value),
+    [id, data],
   );
 
   return (
     <div
       style={{
-        background: bgColor, border: `2px solid ${color}`,
+        background: bgColor,
+        border: `2px solid ${color}`,
         borderRadius: "100px",
-        width: w, height: h, minWidth: 80, minHeight: 32,
-        boxSizing: "border-box", display: "flex", alignItems: "center", justifyContent: "center",
+        width: w,
+        height: h,
+        minWidth: 80,
+        minHeight: 32,
+        boxSizing: "border-box",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
         boxShadow: `0 2px 8px rgba(0,0,0,0.05)`,
       }}
     >
       <NodeResizer
         isVisible={selected}
-        minWidth={80} minHeight={32}
+        minWidth={80}
+        minHeight={32}
         lineStyle={{ borderColor: color, borderWidth: 1, opacity: 0.6 }}
-        handleStyle={{ width: 8, height: 8, borderRadius: 2, background: color, border: "1.5px solid var(--background)" }}
+        handleStyle={{
+          width: 8,
+          height: 8,
+          borderRadius: 2,
+          background: color,
+          border: "1.5px solid var(--background)",
+        }}
       />
-      <Handle type="source" position={Position.Top}    id="t" style={{ background: color, border: "2px solid var(--background)" }} />
-      <Handle type="source" position={Position.Left}   id="l" style={{ background: color, border: "2px solid var(--background)" }} />
-      <Handle type="source" position={Position.Bottom} id="b" style={{ background: color, border: "2px solid var(--background)" }} />
-      <Handle type="source" position={Position.Right}  id="r" style={{ background: color, border: "2px solid var(--background)" }} />
-      
+      <Handle
+        type="source"
+        position={Position.Top}
+        id="t"
+        style={{ background: color, border: "2px solid var(--background)" }}
+      />
+      <Handle
+        type="source"
+        position={Position.Left}
+        id="l"
+        style={{ background: color, border: "2px solid var(--background)" }}
+      />
+      <Handle
+        type="source"
+        position={Position.Bottom}
+        id="b"
+        style={{ background: color, border: "2px solid var(--background)" }}
+      />
+      <Handle
+        type="source"
+        position={Position.Right}
+        id="r"
+        style={{ background: color, border: "2px solid var(--background)" }}
+      />
+
       <input
         className="nodrag"
         value={data.label || ""}
         onChange={onChange}
         placeholder={isStart ? "Start" : "End"}
         style={{
-          background: "transparent", border: "none", textAlign: "center",
-          fontSize: 13, fontWeight: 600, width: "80%", outline: "none", color,
+          background: "transparent",
+          border: "none",
+          textAlign: "center",
+          fontSize: 13,
+          fontWeight: 600,
+          width: "80%",
+          outline: "none",
+          color,
         }}
       />
     </div>
   );
 }
 
-function InputNode({ data, id, selected, width, height }: { data: any; id: string; selected?: boolean; width?: number; height?: number }) {
-  return <TerminalNode data={{ ...data, terminalType: "start" }} id={id} selected={selected} width={width} height={height} />;
+function InputNode({
+  data,
+  id,
+  selected,
+  width,
+  height,
+}: {
+  data: any;
+  id: string;
+  selected?: boolean;
+  width?: number;
+  height?: number;
+}) {
+  return (
+    <TerminalNode
+      data={{ ...data, terminalType: "start" }}
+      id={id}
+      selected={selected}
+      width={width}
+      height={height}
+    />
+  );
 }
-function OutputNode({ data, id, selected, width, height }: { data: any; id: string; selected?: boolean; width?: number; height?: number }) {
-  return <TerminalNode data={{ ...data, terminalType: "end" }} id={id} selected={selected} width={width} height={height} />;
+function OutputNode({
+  data,
+  id,
+  selected,
+  width,
+  height,
+}: {
+  data: any;
+  id: string;
+  selected?: boolean;
+  width?: number;
+  height?: number;
+}) {
+  return (
+    <TerminalNode
+      data={{ ...data, terminalType: "end" }}
+      id={id}
+      selected={selected}
+      width={width}
+      height={height}
+    />
+  );
 }
 
 const initialNodes: Node[] = [];
 const initialEdges: Edge[] = [];
 
-function toolToNodeConfig(tool: ToolType): { type: string; data: Record<string, any> } | null {
+function toolToNodeConfig(
+  tool: ToolType,
+): { type: string; data: Record<string, any> } | null {
   switch (tool) {
     case "process":
       return { type: "process", data: { label: "Process" } };
     case "decision":
       return { type: "decision", data: { label: "Decision?" } };
     case "terminal-start":
-      return { type: "terminal", data: { label: "Start", terminalType: "start" } };
+      return {
+        type: "terminal",
+        data: { label: "Start", terminalType: "start" },
+      };
     case "terminal-end":
       return { type: "terminal", data: { label: "End", terminalType: "end" } };
     case "stickyNote":
-      return { type: "stickyNote", data: { label: "Note...", color: "#fef08a" } };
+      return {
+        type: "stickyNote",
+        data: { label: "Note...", color: "#fef08a" },
+      };
     case "database":
       return {
         type: "database",
@@ -215,7 +501,10 @@ function toolToNodeConfig(tool: ToolType): { type: string; data: Record<string, 
     default:
       if (tool.startsWith("shape-")) {
         const shape = tool.replace("shape-", "");
-        return { type: "shape", data: { shape, label: shape, color: "primary" } };
+        return {
+          type: "shape",
+          data: { shape, label: shape, color: "primary" },
+        };
       }
       return null;
   }
@@ -252,12 +541,22 @@ const nodeTypes: Record<string, React.ComponentType<any>> = {
   database: DatabaseNode,
 };
 
-function FlowContent({ activeTool, onToolUsed, onSaveStatusChange, imperativeRef, initialId, onFlowIdCreated }: FlowContentProps) {
+function FlowContent({
+  activeTool,
+  onToolUsed,
+  onSaveStatusChange,
+  imperativeRef,
+  initialId,
+  onFlowIdCreated,
+}: FlowContentProps) {
   const [nodes, setNodes] = useState<Node[]>(initialNodes);
   const [edges, setEdges] = useState<Edge[]>(initialEdges);
   const [flowName, setFlowName] = useState<string>("Untitled Flowchart");
-  const [currentFlowId, setCurrentFlowId] = useState<string | null>(initialId || null);
-  const { screenToFlowPosition, getNodes, getEdges, getViewport } = useReactFlow();
+  const [currentFlowId, setCurrentFlowId] = useState<string | null>(
+    initialId || null,
+  );
+  const { screenToFlowPosition, getNodes, getEdges, getViewport } =
+    useReactFlow();
   const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
   const saveStatusRef = useRef<"saved" | "saving" | "unsaved">("saved");
   // Ref mirrors currentFlowId so auto-save can read it without being in the dep array
@@ -268,37 +567,49 @@ function FlowContent({ activeTool, onToolUsed, onSaveStatusChange, imperativeRef
   // (inline arrow functions in the parent change identity every render, which would
   //  cancel the 3-second timer before the save ever completes)
   const onFlowIdCreatedRef = useRef(onFlowIdCreated);
-  useEffect(() => { onFlowIdCreatedRef.current = onFlowIdCreated; }, [onFlowIdCreated]);
+  useEffect(() => {
+    onFlowIdCreatedRef.current = onFlowIdCreated;
+  }, [onFlowIdCreated]);
 
   const setSaveStatus = useCallback(
     (status: "saved" | "saving" | "unsaved") => {
       saveStatusRef.current = status;
       onSaveStatusChange(status);
     },
-    [onSaveStatusChange]
+    [onSaveStatusChange],
   );
 
   const handleNodeChange = useCallback((nodeId: string, newLabel: string) => {
     setNodes((nds) =>
       nds.map((n) =>
-        n.id === nodeId ? { ...n, data: { ...n.data, label: newLabel } } : n
-      )
+        n.id === nodeId ? { ...n, data: { ...n.data, label: newLabel } } : n,
+      ),
     );
   }, []);
 
-  const handleNodeDataChange = useCallback((nodeId: string, newData: Record<string, unknown>) => {
-    setNodes((nds) =>
-      nds.map((n) =>
-        n.id === nodeId ? { ...n, data: { ...n.data, ...newData } } : n
-      )
-    );
-  }, []);
+  const handleNodeDataChange = useCallback(
+    (nodeId: string, newData: Record<string, unknown>) => {
+      setNodes((nds) =>
+        nds.map((n) =>
+          n.id === nodeId ? { ...n, data: { ...n.data, ...newData } } : n,
+        ),
+      );
+    },
+    [],
+  );
 
-  const attachCallbacks = useCallback((nds: Node[]) =>
-    nds.map((n) => ({
-      ...n,
-      data: { ...n.data, onChange: handleNodeChange, onDataChange: handleNodeDataChange },
-    })), [handleNodeChange, handleNodeDataChange]);
+  const attachCallbacks = useCallback(
+    (nds: Node[]) =>
+      nds.map((n) => ({
+        ...n,
+        data: {
+          ...n.data,
+          onChange: handleNodeChange,
+          onDataChange: handleNodeDataChange,
+        },
+      })),
+    [handleNodeChange, handleNodeDataChange],
+  );
 
   useEffect(() => {
     const loadData = async () => {
@@ -359,7 +670,10 @@ function FlowContent({ activeTool, onToolUsed, onSaveStatusChange, imperativeRef
   }, [initialId, attachCallbacks]);
 
   useEffect(() => {
-    localStorage.setItem("flowchart-data", JSON.stringify({ nodes, edges, name: flowName }));
+    localStorage.setItem(
+      "flowchart-data",
+      JSON.stringify({ nodes, edges, name: flowName }),
+    );
   }, [nodes, edges, flowName]);
 
   useEffect(() => {
@@ -379,7 +693,7 @@ function FlowContent({ activeTool, onToolUsed, onSaveStatusChange, imperativeRef
 
       const { session } = await getSessionSafe();
       if (!session?.user) {
-        setSaveStatus("saved"); 
+        setSaveStatus("saved");
         return;
       }
 
@@ -391,7 +705,10 @@ function FlowContent({ activeTool, onToolUsed, onSaveStatusChange, imperativeRef
         updatedAt: new Date().toISOString(),
       };
 
-      const result = await saveFlowToDb(flowData, currentFlowIdRef.current || undefined);
+      const result = await saveFlowToDb(
+        flowData,
+        currentFlowIdRef.current || undefined,
+      );
 
       if (result.success && result.id) {
         setSaveStatus("saved");
@@ -416,8 +733,12 @@ function FlowContent({ activeTool, onToolUsed, onSaveStatusChange, imperativeRef
     setNodes((nds) =>
       nds.map((n) => ({
         ...n,
-        data: { ...n.data, onChange: handleNodeChange, onDataChange: handleNodeDataChange },
-      }))
+        data: {
+          ...n.data,
+          onChange: handleNodeChange,
+          onDataChange: handleNodeDataChange,
+        },
+      })),
     );
   }, [handleNodeChange, handleNodeDataChange]);
 
@@ -427,7 +748,7 @@ function FlowContent({ activeTool, onToolUsed, onSaveStatusChange, imperativeRef
     if (!currentFlowId) return;
 
     const channel = supabase.channel(`room_${currentFlowId}`);
-    
+
     channel
       .on("broadcast", { event: "nodes-change" }, ({ payload }) => {
         setNodes((nds) => applyNodeChanges(payload, nds));
@@ -448,42 +769,38 @@ function FlowContent({ activeTool, onToolUsed, onSaveStatusChange, imperativeRef
     };
   }, [currentFlowId]);
 
-  const onNodesChange = useCallback(
-    (changes: NodeChange[]) => {
-      setNodes((nds) => applyNodeChanges(changes, nds));
-      channelRef.current?.send({
-        type: "broadcast",
-        event: "nodes-change",
-        payload: changes,
-      });
-    },
-    []
-  );
+  const onNodesChange = useCallback((changes: NodeChange[]) => {
+    setNodes((nds) => applyNodeChanges(changes, nds));
+    channelRef.current?.send({
+      type: "broadcast",
+      event: "nodes-change",
+      payload: changes,
+    });
+  }, []);
 
-  const onEdgesChange = useCallback(
-    (changes: EdgeChange[]) => {
-      setEdges((eds) => applyEdgeChanges(changes, eds));
-      channelRef.current?.send({
-        type: "broadcast",
-        event: "edges-change",
-        payload: changes,
-      });
-    },
-    []
-  );
+  const onEdgesChange = useCallback((changes: EdgeChange[]) => {
+    setEdges((eds) => applyEdgeChanges(changes, eds));
+    channelRef.current?.send({
+      type: "broadcast",
+      event: "edges-change",
+      payload: changes,
+    });
+  }, []);
 
-  const onConnect = useCallback(
-    (connection: Connection) => {
-      const newEdge: Edge = { ...connection, markerEnd: { type: MarkerType.ArrowClosed }, style: { strokeWidth: 1.5 }, id: `edge-${Date.now()}` } as Edge;
-      setEdges((eds) => addEdge(newEdge, eds));
-      channelRef.current?.send({
-        type: "broadcast",
-        event: "edges-change",
-        payload: [{ type: "add", item: newEdge }],
-      });
-    },
-    []
-  );
+  const onConnect = useCallback((connection: Connection) => {
+    const newEdge: Edge = {
+      ...connection,
+      markerEnd: { type: MarkerType.ArrowClosed },
+      style: { strokeWidth: 1.5 },
+      id: `edge-${Date.now()}`,
+    } as Edge;
+    setEdges((eds) => addEdge(newEdge, eds));
+    channelRef.current?.send({
+      type: "broadcast",
+      event: "edges-change",
+      payload: [{ type: "add", item: newEdge }],
+    });
+  }, []);
 
   // Click on canvas to add shape (when a tool is active)
   const onPaneClick = useCallback(
@@ -492,12 +809,19 @@ function FlowContent({ activeTool, onToolUsed, onSaveStatusChange, imperativeRef
       const config = toolToNodeConfig(activeTool);
       if (!config) return;
 
-      const position = screenToFlowPosition({ x: event.clientX, y: event.clientY });
+      const position = screenToFlowPosition({
+        x: event.clientX,
+        y: event.clientY,
+      });
       const newNode: Node = {
         id: `node-${Date.now()}`,
         type: config.type,
         position: { x: position.x - 80, y: position.y - 40 },
-        data: { ...config.data, onChange: handleNodeChange, onDataChange: handleNodeDataChange },
+        data: {
+          ...config.data,
+          onChange: handleNodeChange,
+          onDataChange: handleNodeDataChange,
+        },
       };
       setNodes((nds) => [...nds, newNode]);
       channelRef.current?.send({
@@ -507,7 +831,13 @@ function FlowContent({ activeTool, onToolUsed, onSaveStatusChange, imperativeRef
       });
       onToolUsed();
     },
-    [activeTool, screenToFlowPosition, handleNodeChange, handleNodeDataChange, onToolUsed]
+    [
+      activeTool,
+      screenToFlowPosition,
+      handleNodeChange,
+      handleNodeDataChange,
+      onToolUsed,
+    ],
   );
 
   useEffect(() => {
@@ -531,10 +861,12 @@ function FlowContent({ activeTool, onToolUsed, onSaveStatusChange, imperativeRef
     a.click();
     URL.revokeObjectURL(url);
   }, [nodes, edges, flowName]);
- 
+
   const getFullFlowCapture = useCallback(
     (outputWidth: number, outputHeight: number, padding = 40) => {
-      const viewport = document.querySelector(".react-flow__viewport") as HTMLElement;
+      const viewport = document.querySelector(
+        ".react-flow__viewport",
+      ) as HTMLElement;
       if (!viewport || nodes.length === 0) return null;
 
       const bounds = getNodesBounds(nodes);
@@ -542,15 +874,15 @@ function FlowContent({ activeTool, onToolUsed, onSaveStatusChange, imperativeRef
         bounds,
         outputWidth,
         outputHeight,
-        0.1,    
-        5,      
-        padding
+        0.1,
+        5,
+        padding,
       );
 
       return {
         viewport,
         style: {
-          width:  `${outputWidth}px`,
+          width: `${outputWidth}px`,
           height: `${outputHeight}px`,
           transform: `translate(${x}px, ${y}px) scale(${zoom})`,
         } as React.CSSProperties,
@@ -558,7 +890,7 @@ function FlowContent({ activeTool, onToolUsed, onSaveStatusChange, imperativeRef
         outputHeight,
       };
     },
-    [nodes]
+    [nodes],
   );
 
   const handleExportImage = useCallback(() => {
@@ -566,27 +898,31 @@ function FlowContent({ activeTool, onToolUsed, onSaveStatusChange, imperativeRef
     const aspect = bounds ? bounds.width / bounds.height : 16 / 9;
 
     const OUTPUT_HEIGHT = 1080;
-    const OUTPUT_WIDTH  = Math.round(OUTPUT_HEIGHT * aspect);
+    const OUTPUT_WIDTH = Math.round(OUTPUT_HEIGHT * aspect);
 
     const capture = getFullFlowCapture(OUTPUT_WIDTH, OUTPUT_HEIGHT);
     if (!capture) return;
 
     toPng(capture.viewport, {
       backgroundColor: "var(--background)",
-      width:  capture.outputWidth,
+      width: capture.outputWidth,
       height: capture.outputHeight,
-      style:  capture.style,
-    }).then((dataUrl) => {
-      const link = document.createElement("a");
-      link.download = `${flowName || "flowchart"}.png`;
-      link.href = dataUrl;
-      link.click();
-    }).catch(console.error);
+      style: capture.style,
+    })
+      .then((dataUrl) => {
+        const link = document.createElement("a");
+        link.download = `${flowName || "flowchart"}.png`;
+        link.href = dataUrl;
+        link.click();
+      })
+      .catch(console.error);
   }, [flowName, nodes, getFullFlowCapture]);
 
   const handleExportViewport = useCallback(() => {
-    const viewportEl = document.querySelector(".react-flow__viewport") as HTMLElement;
-    const container  = document.querySelector(".react-flow") as HTMLElement;
+    const viewportEl = document.querySelector(
+      ".react-flow__viewport",
+    ) as HTMLElement;
+    const container = document.querySelector(".react-flow") as HTMLElement;
     if (!viewportEl || !container) return;
 
     const { width, height } = container.getBoundingClientRect();
@@ -595,42 +931,47 @@ function FlowContent({ activeTool, onToolUsed, onSaveStatusChange, imperativeRef
     const h = Math.round(height);
 
     const docStyle = getComputedStyle(document.documentElement);
-    const bgColor  = getComputedStyle(container).backgroundColor || "#ffffff";
-    const fgColor  = docStyle.getPropertyValue("color") || "#000000";
+    const bgColor = getComputedStyle(container).backgroundColor || "#ffffff";
+    const fgColor = docStyle.getPropertyValue("color") || "#000000";
 
     toPng(viewportEl, {
       backgroundColor: bgColor,
-      width:  w,
+      width: w,
       height: h,
       style: {
-        width:     `${w}px`,
-        height:    `${h}px`,
+        width: `${w}px`,
+        height: `${h}px`,
         transform: `translate(${x}px, ${y}px) scale(${zoom})`,
-        color:     fgColor,
+        color: fgColor,
       },
       filter: (node) => {
         if (node instanceof HTMLElement || node instanceof SVGElement) {
           const computed = getComputedStyle(node);
           if (node.tagName === "text" || node.tagName === "tspan") {
-            (node as SVGElement).setAttribute("fill", computed.color || fgColor);
+            (node as SVGElement).setAttribute(
+              "fill",
+              computed.color || fgColor,
+            );
           }
         }
         return true;
       },
-    }).then((dataUrl) => {
-      const link = document.createElement("a");
-      link.download = `${flowName || "flowchart"}.png`;
-      link.href = dataUrl;
-      link.click();
-    }).catch(console.error);
+    })
+      .then((dataUrl) => {
+        const link = document.createElement("a");
+        link.download = `${flowName || "flowchart"}.png`;
+        link.href = dataUrl;
+        link.click();
+      })
+      .catch(console.error);
   }, [flowName, getViewport]);
 
   const handleManualSave = useCallback(async () => {
     const { session } = await getSessionSafe();
-    if (!session?.user) { 
+    if (!session?.user) {
       localStorage.setItem(
         "flowchart-data",
-        JSON.stringify({ nodes, edges, name: flowName })
+        JSON.stringify({ nodes, edges, name: flowName }),
       );
       setSaveStatus("saved");
       return;
@@ -642,7 +983,10 @@ function FlowContent({ activeTool, onToolUsed, onSaveStatusChange, imperativeRef
       name: flowName,
       updatedAt: new Date().toISOString(),
     };
-    const result = await saveFlowToDb(flowData, currentFlowIdRef.current || undefined);
+    const result = await saveFlowToDb(
+      flowData,
+      currentFlowIdRef.current || undefined,
+    );
     if (result.success && result.id) {
       setSaveStatus("saved");
       if (!currentFlowIdRef.current) {
@@ -671,14 +1015,18 @@ function FlowContent({ activeTool, onToolUsed, onSaveStatusChange, imperativeRef
     (aiData: FlowData) => {
       const nodesWithHandlers = aiData.nodes.map((n) => ({
         ...n,
-        data: { ...n.data, onChange: handleNodeChange, onDataChange: handleNodeDataChange },
+        data: {
+          ...n.data,
+          onChange: handleNodeChange,
+          onDataChange: handleNodeDataChange,
+        },
       }));
       setNodes(nodesWithHandlers);
       setEdges(aiData.edges);
       if (aiData.name) setFlowName(aiData.name);
       setSaveStatus("unsaved");
     },
-    [handleNodeChange, handleNodeDataChange, setSaveStatus]
+    [handleNodeChange, handleNodeDataChange, setSaveStatus],
   );
   useImperativeHandle(imperativeRef, () => ({
     handleExport,
@@ -764,7 +1112,10 @@ interface FlowCanvasProps {
 }
 
 export const FlowCanvas = forwardRef<FlowCanvasHandle, FlowCanvasProps>(
-  ({ activeTool, onToolUsed, onSaveStatusChange, initialId, onFlowIdCreated }, ref) => {
+  (
+    { activeTool, onToolUsed, onSaveStatusChange, initialId, onFlowIdCreated },
+    ref,
+  ) => {
     return (
       <ReactFlowProvider>
         <FlowContent
@@ -777,7 +1128,7 @@ export const FlowCanvas = forwardRef<FlowCanvasHandle, FlowCanvasProps>(
         />
       </ReactFlowProvider>
     );
-  }
+  },
 );
 
 FlowCanvas.displayName = "FlowCanvas";
